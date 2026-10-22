@@ -1,0 +1,946 @@
+[
+{
+"z": 1,
+"symbol": "H",
+"name": "hydrogen",
+"mass": 1.008,
+"density": 0.0708,
+"covalentRadius": 0.31
+},
+{
+"z": 2,
+"symbol": "He",
+"name": "helium",
+"mass": 4.002602,
+"density": 0.122,
+"covalentRadius": 0.28
+},
+{
+"z": 3,
+"symbol": "Li",
+"name": "lithium",
+"mass": 6.94,
+"density": 0.534,
+"covalentRadius": 1.28
+},
+{
+"z": 4,
+"symbol": "Be",
+"name": "beryllium",
+"mass": 9.0121831,
+"density": 1.848,
+"covalentRadius": 0.96
+},
+{
+"z": 5,
+"symbol": "B",
+"name": "boron",
+"mass": 10.81,
+"density": 2.34,
+"covalentRadius": 0.84
+},
+{
+"z": 6,
+"symbol": "C",
+"name": "carbon",
+"mass": 12.011,
+"density": 2.2,
+"covalentRadius": 0.76
+},
+{
+"z": 7,
+"symbol": "N",
+"name": "nitrogen",
+"mass": 14.007,
+"density": 0.808,
+"covalentRadius": 0.71
+},
+{
+"z": 8,
+"symbol": "O",
+"name": "oxygen",
+"mass": 15.999,
+"density": 1.14,
+"covalentRadius": 0.66
+},
+{
+"z": 9,
+"symbol": "F",
+"name": "fluorine",
+"mass": 18.998403162,
+"density": 1.5,
+"covalentRadius": 0.57
+},
+{
+"z": 10,
+"symbol": "Ne",
+"name": "neon",
+"mass": 20.1797,
+"density": 1.207,
+"covalentRadius": 0.58
+},
+{
+"z": 11,
+"symbol": "Na",
+"name": "sodium",
+"mass": 22.98976928,
+"density": 0.971,
+"covalentRadius": 1.66
+},
+{
+"z": 12,
+"symbol": "Mg",
+"name": "magnesium",
+"mass": 24.305,
+"density": 1.738,
+"covalentRadius": 1.41
+},
+{
+"z": 13,
+"symbol": "Al",
+"name": "aluminum",
+"mass": 26.9815384,
+"density": 2.6989,
+"covalentRadius": 1.21
+},
+{
+"z": 14,
+"symbol": "Si",
+"name": "silicon",
+"mass": 28.085,
+"density": 2.33,
+"covalentRadius": 1.11
+},
+{
+"z": 15,
+"symbol": "P",
+"name": "phosphorus",
+"mass": 30.973761998,
+"density": 1.82,
+"covalentRadius": 1.07
+},
+{
+"z": 16,
+"symbol": "S",
+"name": "sulfur",
+"mass": 32.06,
+"density": 2.07,
+"covalentRadius": 1.05
+},
+{
+"z": 17,
+"symbol": "Cl",
+"name": "chlorine",
+"mass": 35.45,
+"density": 1.56,
+"covalentRadius": 1.02
+},
+{
+"z": 18,
+"symbol": "Ar",
+"name": "argon",
+"mass": 39.95,
+"density": 1.4,
+"covalentRadius": 1.06
+},
+{
+"z": 19,
+"symbol": "K",
+"name": "potassium",
+"mass": 39.0983,
+"density": 0.862,
+"covalentRadius": 2.03
+},
+{
+"z": 20,
+"symbol": "Ca",
+"name": "calcium",
+"mass": 40.078,
+"density": 1.55,
+"covalentRadius": 1.76
+},
+{
+"z": 21,
+"symbol": "Sc",
+"name": "scandium",
+"mass": 44.955907,
+"density": 2.989,
+"covalentRadius": 1.7
+},
+{
+"z": 22,
+"symbol": "Ti",
+"name": "titanium",
+"mass": 47.867,
+"density": 4.54,
+"covalentRadius": 1.6
+},
+{
+"z": 23,
+"symbol": "V",
+"name": "vanadium",
+"mass": 50.9415,
+"density": 6.11,
+"covalentRadius": 1.53
+},
+{
+"z": 24,
+"symbol": "Cr",
+"name": "chromium",
+"mass": 51.9961,
+"density": 7.19,
+"covalentRadius": 1.39
+},
+{
+"z": 25,
+"symbol": "Mn",
+"name": "manganese",
+"mass": 54.938043,
+"density": 7.33,
+"covalentRadius": 1.39
+},
+{
+"z": 26,
+"symbol": "Fe",
+"name": "iron",
+"mass": 55.845,
+"density": 7.874,
+"covalentRadius": 1.32
+},
+{
+"z": 27,
+"symbol": "Co",
+"name": "cobalt",
+"mass": 58.933194,
+"density": 8.9,
+"covalentRadius": 1.26
+},
+{
+"z": 28,
+"symbol": "Ni",
+"name": "nickel",
+"mass": 58.6934,
+"density": 8.902,
+"covalentRadius": 1.24
+},
+{
+"z": 29,
+"symbol": "Cu",
+"name": "copper",
+"mass": 63.546,
+"density": 8.96,
+"covalentRadius": 1.32
+},
+{
+"z": 30,
+"symbol": "Zn",
+"name": "zinc",
+"mass": 65.38,
+"density": 7.133,
+"covalentRadius": 1.22
+},
+{
+"z": 31,
+"symbol": "Ga",
+"name": "gallium",
+"mass": 69.723,
+"density": 5.904,
+"covalentRadius": 1.22
+},
+{
+"z": 32,
+"symbol": "Ge",
+"name": "germanium",
+"mass": 72.63,
+"density": 5.323,
+"covalentRadius": 1.2
+},
+{
+"z": 33,
+"symbol": "As",
+"name": "arsenic",
+"mass": 74.921595,
+"density": 5.73,
+"covalentRadius": 1.19
+},
+{
+"z": 34,
+"symbol": "Se",
+"name": "selenium",
+"mass": 78.971,
+"density": 4.79,
+"covalentRadius": 1.2
+},
+{
+"z": 35,
+"symbol": "Br",
+"name": "bromine",
+"mass": 79.904,
+"density": 3.12,
+"covalentRadius": 1.2
+},
+{
+"z": 36,
+"symbol": "Kr",
+"name": "krypton",
+"mass": 83.798,
+"density": 2.16,
+"covalentRadius": 1.16
+},
+{
+"z": 37,
+"symbol": "Rb",
+"name": "rubidium",
+"mass": 85.4678,
+"density": 1.532,
+"covalentRadius": 2.2
+},
+{
+"z": 38,
+"symbol": "Sr",
+"name": "strontium",
+"mass": 87.62,
+"density": 2.54,
+"covalentRadius": 1.95
+},
+{
+"z": 39,
+"symbol": "Y",
+"name": "yttrium",
+"mass": 88.905838,
+"density": 4.469,
+"covalentRadius": 1.9
+},
+{
+"z": 40,
+"symbol": "Zr",
+"name": "zirconium",
+"mass": 91.224,
+"density": 6.506,
+"covalentRadius": 1.75
+},
+{
+"z": 41,
+"symbol": "Nb",
+"name": "niobium",
+"mass": 92.90637,
+"density": 8.57,
+"covalentRadius": 1.64
+},
+{
+"z": 42,
+"symbol": "Mo",
+"name": "molybdenum",
+"mass": 95.95,
+"density": 10.22,
+"covalentRadius": 1.54
+},
+{
+"z": 43,
+"symbol": "Tc",
+"name": "technetium",
+"mass": 98.0,
+"density": 11.5,
+"covalentRadius": 1.47
+},
+{
+"z": 44,
+"symbol": "Ru",
+"name": "ruthenium",
+"mass": 101.07,
+"density": 12.41,
+"covalentRadius": 1.46
+},
+{
+"z": 45,
+"symbol": "Rh",
+"name": "rhodium",
+"mass": 102.90549,
+"density": 12.41,
+"covalentRadius": 1.42
+},
+{
+"z": 46,
+"symbol": "Pd",
+"name": "palladium",
+"mass": 106.42,
+"density": 12.02,
+"covalentRadius": 1.39
+},
+{
+"z": 47,
+"symbol": "Ag",
+"name": "silver",
+"mass": 107.8682,
+"density": 10.5,
+"covalentRadius": 1.45
+},
+{
+"z": 48,
+"symbol": "Cd",
+"name": "cadmium",
+"mass": 112.414,
+"density": 8.65,
+"covalentRadius": 1.44
+},
+{
+"z": 49,
+"symbol": "In",
+"name": "indium",
+"mass": 114.818,
+"density": 7.31,
+"covalentRadius": 1.42
+},
+{
+"z": 50,
+"symbol": "Sn",
+"name": "tin",
+"mass": 118.71,
+"density": 7.31,
+"covalentRadius": 1.39
+},
+{
+"z": 51,
+"symbol": "Sb",
+"name": "antimony",
+"mass": 121.76,
+"density": 6.691,
+"covalentRadius": 1.39
+},
+{
+"z": 52,
+"symbol": "Te",
+"name": "tellurium",
+"mass": 127.6,
+"density": 6.24,
+"covalentRadius": 1.38
+},
+{
+"z": 53,
+"symbol": "I",
+"name": "iodine",
+"mass": 126.90447,
+"density": 4.93,
+"covalentRadius": 1.39
+},
+{
+"z": 54,
+"symbol": "Xe",
+"name": "xenon",
+"mass": 131.293,
+"density": 3.52,
+"covalentRadius": 1.4
+},
+{
+"z": 55,
+"symbol": "Cs",
+"name": "cesium",
+"mass": 132.90545196,
+"density": 1.873,
+"covalentRadius": 2.44
+},
+{
+"z": 56,
+"symbol": "Ba",
+"name": "barium",
+"mass": 137.327,
+"density": 3.5,
+"covalentRadius": 2.15
+},
+{
+"z": 57,
+"symbol": "La",
+"name": "lanthanum",
+"mass": 138.90547,
+"density": 6.145,
+"covalentRadius": 2.07
+},
+{
+"z": 58,
+"symbol": "Ce",
+"name": "cerium",
+"mass": 140.116,
+"density": 6.77,
+"covalentRadius": 2.04
+},
+{
+"z": 59,
+"symbol": "Pr",
+"name": "praseodymium",
+"mass": 140.90766,
+"density": 6.773,
+"covalentRadius": 2.03
+},
+{
+"z": 60,
+"symbol": "Nd",
+"name": "neodymium",
+"mass": 144.242,
+"density": 7.008,
+"covalentRadius": 2.01
+},
+{
+"z": 61,
+"symbol": "Pm",
+"name": "promethium",
+"mass": 145.0,
+"density": 7.264,
+"covalentRadius": 1.99
+},
+{
+"z": 62,
+"symbol": "Sm",
+"name": "samarium",
+"mass": 150.36,
+"density": 7.52,
+"covalentRadius": 1.98
+},
+{
+"z": 63,
+"symbol": "Eu",
+"name": "europium",
+"mass": 151.964,
+"density": 5.244,
+"covalentRadius": 1.98
+},
+{
+"z": 64,
+"symbol": "Gd",
+"name": "gadolinium",
+"mass": 157.25,
+"density": 7.901,
+"covalentRadius": 1.96
+},
+{
+"z": 65,
+"symbol": "Tb",
+"name": "terbium",
+"mass": 158.925354,
+"density": 8.23,
+"covalentRadius": 1.94
+},
+{
+"z": 66,
+"symbol": "Dy",
+"name": "dysprosium",
+"mass": 162.5,
+"density": 8.551,
+"covalentRadius": 1.92
+},
+{
+"z": 67,
+"symbol": "Ho",
+"name": "holmium",
+"mass": 164.930329,
+"density": 8.795,
+"covalentRadius": 1.92
+},
+{
+"z": 68,
+"symbol": "Er",
+"name": "erbium",
+"mass": 167.259,
+"density": 9.066,
+"covalentRadius": 1.89
+},
+{
+"z": 69,
+"symbol": "Tm",
+"name": "thulium",
+"mass": 168.934219,
+"density": 9.321,
+"covalentRadius": 1.9
+},
+{
+"z": 70,
+"symbol": "Yb",
+"name": "ytterbium",
+"mass": 173.045,
+"density": 6.966,
+"covalentRadius": 1.87
+},
+{
+"z": 71,
+"symbol": "Lu",
+"name": "lutetium",
+"mass": 174.9668,
+"density": 9.841,
+"covalentRadius": 1.87
+},
+{
+"z": 72,
+"symbol": "Hf",
+"name": "hafnium",
+"mass": 178.486,
+"density": 13.31,
+"covalentRadius": 1.75
+},
+{
+"z": 73,
+"symbol": "Ta",
+"name": "tantalum",
+"mass": 180.94788,
+"density": 16.654,
+"covalentRadius": 1.7
+},
+{
+"z": 74,
+"symbol": "W",
+"name": "tungsten",
+"mass": 183.84,
+"density": 19.3,
+"covalentRadius": 1.62
+},
+{
+"z": 75,
+"symbol": "Re",
+"name": "rhenium",
+"mass": 186.207,
+"density": 21.02,
+"covalentRadius": 1.51
+},
+{
+"z": 76,
+"symbol": "Os",
+"name": "osmium",
+"mass": 190.23,
+"density": 22.57,
+"covalentRadius": 1.44
+},
+{
+"z": 77,
+"symbol": "Ir",
+"name": "iridium",
+"mass": 192.217,
+"density": 22.42,
+"covalentRadius": 1.41
+},
+{
+"z": 78,
+"symbol": "Pt",
+"name": "platinum",
+"mass": 195.084,
+"density": 21.45,
+"covalentRadius": 1.36
+},
+{
+"z": 79,
+"symbol": "Au",
+"name": "gold",
+"mass": 196.96657,
+"density": 19.3,
+"covalentRadius": 1.36
+},
+{
+"z": 80,
+"symbol": "Hg",
+"name": "mercury",
+"mass": 200.592,
+"density": 13.546,
+"covalentRadius": 1.32
+},
+{
+"z": 81,
+"symbol": "Tl",
+"name": "thallium",
+"mass": 204.38,
+"density": 11.85,
+"covalentRadius": 1.45
+},
+{
+"z": 82,
+"symbol": "Pb",
+"name": "lead",
+"mass": 207.2,
+"density": 11.35,
+"covalentRadius": 1.46
+},
+{
+"z": 83,
+"symbol": "Bi",
+"name": "bismuth",
+"mass": 208.9804,
+"density": 9.747,
+"covalentRadius": 1.48
+},
+{
+"z": 84,
+"symbol": "Po",
+"name": "polonium",
+"mass": 209.0,
+"density": 9.32,
+"covalentRadius": 1.4
+},
+{
+"z": 85,
+"symbol": "At",
+"name": "astatine",
+"mass": 210.0,
+"density": null,
+"covalentRadius": 1.5
+},
+{
+"z": 86,
+"symbol": "Rn",
+"name": "radon",
+"mass": 222.0,
+"density": null,
+"covalentRadius": 1.5
+},
+{
+"z": 87,
+"symbol": "Fr",
+"name": "francium",
+"mass": 223.0,
+"density": null,
+"covalentRadius": 2.6
+},
+{
+"z": 88,
+"symbol": "Ra",
+"name": "radium",
+"mass": 226.0,
+"density": null,
+"covalentRadius": 2.21
+},
+{
+"z": 89,
+"symbol": "Ac",
+"name": "actinium",
+"mass": 227.0,
+"density": null,
+"covalentRadius": 2.15
+},
+{
+"z": 90,
+"symbol": "Th",
+"name": "thorium",
+"mass": 232.0377,
+"density": 11.72,
+"covalentRadius": 2.06
+},
+{
+"z": 91,
+"symbol": "Pa",
+"name": "protactinium",
+"mass": 231.03588,
+"density": 15.37,
+"covalentRadius": 2.0
+},
+{
+"z": 92,
+"symbol": "U",
+"name": "uranium",
+"mass": 238.02891,
+"density": 18.95,
+"covalentRadius": 1.96
+},
+{
+"z": 93,
+"symbol": "Np",
+"name": "neptunium",
+"mass": 237.0,
+"density": 20.25,
+"covalentRadius": 1.9
+},
+{
+"z": 94,
+"symbol": "Pu",
+"name": "plutonium",
+"mass": 244.0,
+"density": 19.84,
+"covalentRadius": 1.87
+},
+{
+"z": 95,
+"symbol": "Am",
+"name": "americium",
+"mass": 243.0,
+"density": 13.67,
+"covalentRadius": 1.8
+},
+{
+"z": 96,
+"symbol": "Cm",
+"name": "curium",
+"mass": 247.0,
+"density": 13.51,
+"covalentRadius": 1.69
+},
+{
+"z": 97,
+"symbol": "Bk",
+"name": "berkelium",
+"mass": 247.0,
+"density": 14.0,
+"covalentRadius": null
+},
+{
+"z": 98,
+"symbol": "Cf",
+"name": "californium",
+"mass": 251.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 99,
+"symbol": "Es",
+"name": "einsteinium",
+"mass": 252.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 100,
+"symbol": "Fm",
+"name": "fermium",
+"mass": 257.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 101,
+"symbol": "Md",
+"name": "mendelevium",
+"mass": 258.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 102,
+"symbol": "No",
+"name": "nobelium",
+"mass": 259.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 103,
+"symbol": "Lr",
+"name": "lawrencium",
+"mass": 262.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 104,
+"symbol": "Rf",
+"name": "rutherfordium",
+"mass": 261.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 105,
+"symbol": "Db",
+"name": "dubnium",
+"mass": 262.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 106,
+"symbol": "Sg",
+"name": "seaborgium",
+"mass": 266.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 107,
+"symbol": "Bh",
+"name": "bohrium",
+"mass": 264.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 108,
+"symbol": "Hs",
+"name": "hassium",
+"mass": 277.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 109,
+"symbol": "Mt",
+"name": "meitnerium",
+"mass": 268.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 110,
+"symbol": "Ds",
+"name": "darmstadtium",
+"mass": 281.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 111,
+"symbol": "Rg",
+"name": "roentgenium",
+"mass": 272.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 112,
+"symbol": "Cn",
+"name": "copernicium",
+"mass": 285.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 113,
+"symbol": "Nh",
+"name": "nihonium",
+"mass": 286.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 114,
+"symbol": "Fl",
+"name": "flerovium",
+"mass": 289.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 115,
+"symbol": "Mc",
+"name": "moscovium",
+"mass": 289.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 116,
+"symbol": "Lv",
+"name": "livermorium",
+"mass": 293.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 117,
+"symbol": "Ts",
+"name": "tennessine",
+"mass": 294.0,
+"density": null,
+"covalentRadius": null
+},
+{
+"z": 118,
+"symbol": "Og",
+"name": "oganesson",
+"mass": 294.0,
+"density": null,
+"covalentRadius": null
+}
+]

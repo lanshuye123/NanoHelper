@@ -1,0 +1,40 @@
+{
+  "name": "crystal-toolbox",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "纳米材料与晶体学工具箱 — 纯前端 XRD/SAED 数据处理与晶体学计算",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write \"src/**/*.{ts,vue,css}\" \"docs/**/*.md\""
+  },
+  "dependencies": {
+    "element-plus": "^2.14.7",
+    "katex": "^0.16.47",
+    "lucide-vue-next": "^0.468.0",
+    "markdown-it": "^14.3.3",
+    "markdown-it-container": "^4.0.0",
+    "pinia": "^4.1.0",
+    "vue": "^3.5.44",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.2.0",
+    "@types/node": "^24.10.0",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "jsdom": "^30.1.3",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.0",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11",
+    "vue-tsc": "^3.3.11"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

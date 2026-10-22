@@ -1,0 +1,231 @@
+/* Element Plus theme bridge: make EP inherit the CrystalToolBox design tokens. */
+
+:root,
+html.dark {
+  --el-font-family: var(--font-sans);
+  --el-font-size-base: 13px;
+  --el-border-radius-base: 7px;
+  --el-border-radius-small: 5px;
+  --el-color-primary: var(--accent);
+  --el-color-primary-light-3: color-mix(in srgb, var(--accent) 68%, var(--bg));
+  --el-color-primary-light-5: color-mix(in srgb, var(--accent) 48%, var(--bg));
+  --el-color-primary-light-7: color-mix(in srgb, var(--accent) 28%, var(--bg));
+  --el-color-primary-light-8: color-mix(in srgb, var(--accent) 18%, var(--bg));
+  --el-color-primary-light-9: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  --el-color-primary-dark-2: color-mix(in srgb, var(--accent) 80%, #000);
+  --el-color-success: var(--ok);
+  --el-color-warning: var(--warn);
+  --el-color-danger: var(--danger);
+  --el-color-error: var(--danger);
+  --el-color-info: var(--text-3);
+  --el-text-color-primary: var(--text);
+  --el-text-color-regular: var(--text-2);
+  --el-text-color-secondary: var(--text-3);
+  --el-text-color-placeholder: var(--text-3);
+  --el-border-color: var(--border);
+  --el-border-color-light: var(--border-soft);
+  --el-border-color-lighter: var(--border-soft);
+  --el-border-color-extra-light: var(--border-soft);
+  --el-bg-color: var(--surface);
+  --el-bg-color-page: var(--bg);
+  --el-bg-color-overlay: var(--surface-2);
+  --el-fill-color: var(--surface-2);
+  --el-fill-color-light: var(--surface-2);
+  --el-fill-color-lighter: var(--surface);
+  --el-fill-color-blank: var(--surface);
+  --el-fill-color-dark: var(--surface-3);
+  --el-mask-color: rgba(2, 6, 15, 0.62);
+  --el-box-shadow-light: var(--shadow-sm);
+  --el-box-shadow: var(--shadow);
+  --el-disabled-bg-color: var(--surface-2);
+  --el-disabled-text-color: var(--text-3);
+  --el-disabled-border-color: var(--border);
+}
+
+.el-button {
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  transition: background-color 0.16s, border-color 0.16s, color 0.16s, box-shadow 0.16s;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--accent);
+  --el-button-border-color: var(--accent);
+  --el-button-text-color: #041218;
+  --el-button-hover-bg-color: var(--accent-strong);
+  --el-button-hover-border-color: var(--accent-strong);
+  --el-button-hover-text-color: #041218;
+  --el-button-active-bg-color: var(--accent-strong);
+  --el-button-active-border-color: var(--accent-strong);
+  font-weight: 650;
+}
+
+:root[data-theme='light'] .el-button--primary {
+  --el-button-text-color: #fff;
+  --el-button-hover-text-color: #fff;
+}
+
+.el-button--default {
+  --el-button-bg-color: var(--surface-2);
+  --el-button-border-color: var(--border);
+  --el-button-text-color: var(--text-2);
+  --el-button-hover-bg-color: var(--surface-3);
+  --el-button-hover-border-color: var(--border-strong);
+  --el-button-hover-text-color: var(--text);
+}
+
+.el-button.is-text {
+  --el-button-text-color: var(--text-2);
+}
+
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  background-color: var(--surface-2) !important;
+  box-shadow: 0 0 0 1px var(--border) inset !important;
+  border-radius: 6px;
+}
+
+.el-input__wrapper:hover,
+.el-select__wrapper:hover,
+.el-textarea__inner:hover {
+  box-shadow: 0 0 0 1px var(--border-strong) inset !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px var(--accent) inset !important;
+}
+
+.el-input__inner,
+.el-textarea__inner {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.el-select__placeholder,
+.el-input__placeholder {
+  color: var(--text-3);
+}
+
+.el-select-dropdown__item {
+  font-size: 12.5px;
+}
+
+.el-select-dropdown__item.is-selected {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.el-popper.is-light,
+.el-popper.is-dark {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  box-shadow: var(--shadow);
+}
+
+.el-popper.is-light .el-popper__arrow::before {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.el-switch.is-checked .el-switch__core {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.el-slider__bar {
+  background: var(--accent);
+}
+
+.el-slider__button {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.el-tabs__item {
+  color: var(--text-3);
+  font-size: 12.5px;
+  font-weight: 550;
+}
+
+.el-tabs__item.is-active {
+  color: var(--text);
+}
+
+.el-tabs__active-bar {
+  background: var(--accent);
+}
+
+.el-tabs__nav-wrap::after {
+  background: var(--border-soft);
+}
+
+.el-table {
+  --el-table-bg-color: var(--surface);
+  --el-table-tr-bg-color: var(--surface);
+  --el-table-header-bg-color: var(--surface-2);
+  --el-table-border-color: var(--border-soft);
+  --el-table-text-color: var(--text-2);
+  --el-table-header-text-color: var(--text-3);
+  --el-table-row-hover-bg-color: var(--surface-hover);
+  font-size: 12px;
+}
+
+.el-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.el-dialog__title {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.el-message {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.el-message__content {
+  color: var(--text-2);
+}
+
+.el-radio-button__inner {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.el-radio-button__original-radio:checked + .el-radio-button__inner {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+  box-shadow: -1px 0 0 0 var(--accent-line);
+}
+
+.el-checkbox__label {
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.el-tooltip__popper {
+  font-size: 11.5px;
+}
+
+.el-loading-mask {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+}
