@@ -7,7 +7,15 @@ import PanelCard from '@/components/common/PanelCard.vue'
 import NumberField from '@/components/common/NumberField.vue'
 import MathText from '@/components/common/MathText.vue'
 import DiffractionCanvas, { type DiffractionPoint } from '@/components/chart/DiffractionCanvas.vue'
-import { buildLattice, dSpacing, directionAngle, gLength, planeAngle, planeDirectionAngle, type CellParams } from '@/core/lattice/cell'
+import {
+  buildLattice,
+  dSpacing,
+  directionAngle,
+  gLength,
+  planeAngle,
+  planeDirectionAngle,
+  type CellParams,
+} from '@/core/lattice/cell'
 import { buildPlaneBasis, generateNet, formatZone } from '@/core/lattice/planeNet'
 import { centeringAllows, normalizeZone, planesInZone, zoneAxisFromPlanes } from '@/core/lattice/zone'
 import { formatHkl } from '@/core/math/vec'
@@ -97,7 +105,12 @@ const dTable = computed(() => {
         seen.add(key)
         const d = dSpacing(l, [h, k, li])
         const sinTheta = 1.54056 / (2 * d)
-        out.push({ hkl: [h, k, li], d, g: 1 / d, twoTheta: sinTheta <= 1 ? (2 * Math.asin(sinTheta) * 180) / Math.PI : NaN })
+        out.push({
+          hkl: [h, k, li],
+          d,
+          g: 1 / d,
+          twoTheta: sinTheta <= 1 ? (2 * Math.asin(sinTheta) * 180) / Math.PI : NaN,
+        })
       }
     }
   }
@@ -254,7 +267,7 @@ function openSaed() {
   <ToolPage
     title="倒易空间计算"
     subtitle="从六个晶格参数出发，计算 d 值、晶面/晶向夹角、晶带轴与二维倒易面，并直接送入 SAED 模拟。"
-    eyebrow="晶体学计算 · 01"
+    eyebrow="晶体几何 · 01"
     doc="/docs/userguide/reciprocal"
   >
     <template #actions>
@@ -357,13 +370,27 @@ function openSaed() {
 
       <PanelCard v-if="basis" title="二维基矢" :icon="Grid3x3">
         <div class="kv-list mono">
-          <div class="kv"><span>b₁</span><span>{{ formatHkl(basis.b1, 'square') }}</span></div>
-          <div class="kv"><span>b₂</span><span>{{ formatHkl(basis.b2, 'square') }}</span></div>
-          <div class="kv"><span>|g₁|</span><span>{{ basis.len1.toFixed(6) }} Å⁻¹</span></div>
-          <div class="kv"><span>|g₂|</span><span>{{ basis.len2.toFixed(6) }} Å⁻¹</span></div>
-          <div class="kv"><span>夹角</span><span>{{ basis.angleDeg.toFixed(4) }}°</span></div>
-          <div class="kv"><span>det</span><span>{{ basis.det }}</span></div>
-          <div class="kv"><span>带轴</span><span>{{ formatZone(basis.zone) }}</span></div>
+          <div class="kv">
+            <span>b₁</span><span>{{ formatHkl(basis.b1, 'square') }}</span>
+          </div>
+          <div class="kv">
+            <span>b₂</span><span>{{ formatHkl(basis.b2, 'square') }}</span>
+          </div>
+          <div class="kv">
+            <span>|g₁|</span><span>{{ basis.len1.toFixed(6) }} Å⁻¹</span>
+          </div>
+          <div class="kv">
+            <span>|g₂|</span><span>{{ basis.len2.toFixed(6) }} Å⁻¹</span>
+          </div>
+          <div class="kv">
+            <span>夹角</span><span>{{ basis.angleDeg.toFixed(4) }}°</span>
+          </div>
+          <div class="kv">
+            <span>det</span><span>{{ basis.det }}</span>
+          </div>
+          <div class="kv">
+            <span>带轴</span><span>{{ formatZone(basis.zone) }}</span>
+          </div>
         </div>
         <p class="tiny dim" style="margin-top: 8px">
           基矢经二维格点约化，等价于笔记中「取倒数 → 最小整数比 → 过原点」的步骤，但自动处理含 0 的带轴。
@@ -464,15 +491,21 @@ function openSaed() {
           </div>
         </div>
         <div class="angle-row">
-          <span>晶向夹角 <b class="mono">{{ directionResult?.angle.toFixed(4) }}°</b></span>
-          <span>晶面 A 与晶向 A 夹角 <b class="mono">{{ planeDirResult?.angle.toFixed(4) }}°</b></span>
+          <span
+            >晶向夹角 <b class="mono">{{ directionResult?.angle.toFixed(4) }}°</b></span
+          >
+          <span
+            >晶面 A 与晶向 A 夹角 <b class="mono">{{ planeDirResult?.angle.toFixed(4) }}°</b></span
+          >
         </div>
       </PanelCard>
 
       <PanelCard title="晶带轴与带内晶面" :icon="Grid3x3">
         <div class="zone-box">
           <span class="zone-box__label">由晶面 A × B 得到</span>
-          <span class="zone-box__value mono">{{ zoneFromPlanes ? formatHkl(zoneFromPlanes, 'square') : '两晶面平行' }}</span>
+          <span class="zone-box__value mono">{{
+            zoneFromPlanes ? formatHkl(zoneFromPlanes, 'square') : '两晶面平行'
+          }}</span>
           <span v-if="zoneFromPlanes" class="chip chip--ok tiny">满足 hu+kv+lw=0</span>
         </div>
         <div class="zone-input">
@@ -501,7 +534,11 @@ function openSaed() {
       </PanelCard>
     </div>
 
-    <PanelCard title="二维倒易面" :icon="Sparkles" :hint="`带轴 ${zoneVec ? formatZone(zoneVec) : '—'} · 半径 ${maxG.toFixed(2)} Å⁻¹`">
+    <PanelCard
+      title="二维倒易面"
+      :icon="Sparkles"
+      :hint="`带轴 ${zoneVec ? formatZone(zoneVec) : '—'} · 半径 ${maxG.toFixed(2)} Å⁻¹`"
+    >
       <DiffractionCanvas
         v-if="zoneVec"
         :points="netPoints"

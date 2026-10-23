@@ -18,6 +18,7 @@ withDefaults(
     <header class="tool-head">
       <div class="tool-head__left">
         <div v-if="eyebrow" class="tool-head__eyebrow">
+          <span class="tool-head__eyebrow-dot" />
           <span>{{ eyebrow }}</span>
           <span v-if="status === 'beta'" class="chip chip--accent tiny">BETA</span>
           <span v-else-if="status === 'new'" class="chip chip--ok tiny">NEW</span>
@@ -54,26 +55,28 @@ withDefaults(
   align-items: center;
   gap: 6px;
   height: 30px;
-  padding: 0 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text-2);
-  font-size: 12px;
-  font-weight: 550;
+  padding: 0 11px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--accent-line);
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
   text-decoration: none;
-  transition: all 0.15s;
+  transition:
+    background var(--duration) var(--ease),
+    border-color var(--duration) var(--ease);
 }
 
 .doc-link:hover {
-  border-color: var(--accent-line);
-  color: var(--accent);
   background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-strong);
   text-decoration: none;
 }
 
 .doc-link svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
 }
 </style>

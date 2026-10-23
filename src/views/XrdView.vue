@@ -117,7 +117,7 @@ const markers = computed<ChartMarker[]>(() =>
     .map((r) => ({
       x: r.twoTheta,
       label: formatHkl(r.hkl, 'none'),
-      color: '#fbbf24',
+      color: '#e0a23c',
     })),
 )
 
@@ -128,7 +128,7 @@ const chartSeries = computed<ChartSeries[]>(() => {
       label: '模拟 XRD',
       x: pattern.value.x,
       y: pattern.value.y,
-      color: '#22d3ee',
+      color: '#3b9fdd',
       width: 1.4,
       fill: true,
     })
@@ -138,7 +138,7 @@ const chartSeries = computed<ChartSeries[]>(() => {
       label: '实验数据',
       x: project.derived.x,
       y: project.derived.y,
-      color: '#fb7185',
+      color: '#e06578',
       width: 1,
       opacity: 0.7,
     })
@@ -180,7 +180,7 @@ const whSeries = computed<ChartSeries[]>(() => {
       x: points.map((p) => p.sinTheta),
       y: points.map((p) => p.betaCosTheta),
       type: 'scatter',
-      color: '#22d3ee',
+      color: '#3b9fdd',
       pointRadius: 3,
     },
   ]
@@ -192,7 +192,7 @@ const whSeries = computed<ChartSeries[]>(() => {
       label: '线性拟合',
       x: [min, max],
       y: [result.intercept + result.slope * min, result.intercept + result.slope * max],
-      color: '#fbbf24',
+      color: '#e0a23c',
       width: 1.2,
       dash: [5, 4],
     })
@@ -249,7 +249,16 @@ function exportCsv() {
   ]
   for (const r of rows) {
     lines.push(
-      [r.hkl[0], r.hkl[1], r.hkl[2], r.d.toFixed(6), r.twoTheta.toFixed(5), r.multiplicity, r.f2.toExponential(4), r.relIntensity.toFixed(3)].join(','),
+      [
+        r.hkl[0],
+        r.hkl[1],
+        r.hkl[2],
+        r.d.toFixed(6),
+        r.twoTheta.toFixed(5),
+        r.multiplicity,
+        r.f2.toExponential(4),
+        r.relIntensity.toFixed(3),
+      ].join(','),
     )
   }
   downloadText(lines.join('\n'), safeFilename(`XRD_peaks_${timestamp()}`, 'csv'), 'text/csv;charset=utf-8')
@@ -261,13 +270,11 @@ function exportCsv() {
   <ToolPage
     title="XRD 模拟与分析"
     subtitle="由晶体结构计算理论粉末衍射谱：2θ、多重度、洛伦兹-偏振因子与峰型，并扩展到 Scherrer 与 Williamson–Hall 分析。"
-    eyebrow="晶体学计算 · 03"
+    eyebrow="衍射模拟 · 02"
     doc="/docs/userguide/xrd"
   >
     <template #actions>
-      <el-button size="small" :disabled="!pattern" @click="exportCsv">
-        <Table2 class="btn-icon" /> 峰表 CSV
-      </el-button>
+      <el-button size="small" :disabled="!pattern" @click="exportCsv"> <Table2 class="btn-icon" /> 峰表 CSV </el-button>
       <el-button size="small" type="primary" :disabled="!pattern" @click="exportXy">
         <Download class="btn-icon" /> 导出 .xy
       </el-button>
@@ -306,7 +313,14 @@ function exportCsv() {
           </label>
           <div class="grid-2">
             <NumberField v-model="fwhm" label="FWHM" unit="°" :min="0.001" :max="5" :precision="4" />
-            <NumberField v-if="profile === 'pseudoVoigt'" v-model="eta" label="η（洛伦兹占比）" :min="0" :max="1" :precision="3" />
+            <NumberField
+              v-if="profile === 'pseudoVoigt'"
+              v-model="eta"
+              label="η（洛伦兹占比）"
+              :min="0"
+              :max="1"
+              :precision="3"
+            />
           </div>
           <label class="inline small muted">
             <el-switch v-model="ka2" size="small" />
@@ -334,9 +348,15 @@ function exportCsv() {
         <div v-else class="small dim">点击峰表中的一行查看指标。</div>
         <div class="divider" />
         <div class="kv-list mono">
-          <div class="kv"><span>结构</span><span>{{ structureStore.label }}</span></div>
-          <div class="kv"><span>原子数</span><span>{{ structureStore.atomCount }}</span></div>
-          <div class="kv"><span>空间群</span><span>{{ structureStore.current.spaceGroupSymbol ?? '—' }}</span></div>
+          <div class="kv">
+            <span>结构</span><span>{{ structureStore.label }}</span>
+          </div>
+          <div class="kv">
+            <span>原子数</span><span>{{ structureStore.atomCount }}</span>
+          </div>
+          <div class="kv">
+            <span>空间群</span><span>{{ structureStore.current.spaceGroupSymbol ?? '—' }}</span>
+          </div>
         </div>
       </PanelCard>
 
@@ -371,9 +391,16 @@ function exportCsv() {
           <Plus class="btn-icon" /> 添加峰
         </el-button>
         <div class="wh-result">
-          <div class="kv"><span>晶粒尺寸 D</span><span class="mono">{{ wh && Number.isFinite(wh.sizeNm) ? wh.sizeNm.toFixed(2) : '—' }} nm</span></div>
-          <div class="kv"><span>微应变 ε</span><span class="mono">{{ wh ? (wh.strain * 100).toFixed(4) : '—' }} %</span></div>
-          <div class="kv"><span>R²</span><span class="mono">{{ wh ? wh.r2.toFixed(4) : '—' }}</span></div>
+          <div class="kv">
+            <span>晶粒尺寸 D</span
+            ><span class="mono">{{ wh && Number.isFinite(wh.sizeNm) ? wh.sizeNm.toFixed(2) : '—' }} nm</span>
+          </div>
+          <div class="kv">
+            <span>微应变 ε</span><span class="mono">{{ wh ? (wh.strain * 100).toFixed(4) : '—' }} %</span>
+          </div>
+          <div class="kv">
+            <span>R²</span><span class="mono">{{ wh ? wh.r2.toFixed(4) : '—' }}</span>
+          </div>
         </div>
       </PanelCard>
 
@@ -382,9 +409,7 @@ function exportCsv() {
           <el-button size="small" type="primary" :disabled="!pattern" @click="exportXy">
             <Download class="btn-icon" /> .xy
           </el-button>
-          <el-button size="small" :disabled="!pattern" @click="exportCsv">
-            <Table2 class="btn-icon" /> 峰表
-          </el-button>
+          <el-button size="small" :disabled="!pattern" @click="exportCsv"> <Table2 class="btn-icon" /> 峰表 </el-button>
         </div>
         <p class="tiny dim" style="margin-top: 7px">
           导出的 XY 可直接在 Jade 中打开；若叠加了实验数据，可在 Origin 中对比。
@@ -401,7 +426,9 @@ function exportCsv() {
       <div class="xrd-stats">
         <div v-for="item in stats" :key="item.label" class="stat">
           <div class="stat__label">{{ item.label }}</div>
-          <div class="stat__value">{{ item.value }}<span class="stat__unit">{{ item.unit }}</span></div>
+          <div class="stat__value">
+            {{ item.value }}<span class="stat__unit">{{ item.unit }}</span>
+          </div>
         </div>
       </div>
 
@@ -474,7 +501,13 @@ function exportCsv() {
             <li>Kα2 未剥离时峰宽会被高估，建议先做 Kα2 剥离或固定 Kα1。</li>
             <li>若各峰宽差异很大，先检查择优取向、堆垛层错与仪器条件。</li>
           </ul>
-          <el-button size="small" text type="primary" style="padding-left: 0" @click="$router.push('/docs/cookbook/scherrer')">
+          <el-button
+            size="small"
+            text
+            type="primary"
+            style="padding-left: 0"
+            @click="$router.push('/docs/cookbook/scherrer')"
+          >
             <ArrowRight class="btn-icon" /> Scherrer / W–H 实战手册
           </el-button>
         </PanelCard>

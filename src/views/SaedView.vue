@@ -2,16 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import {
-  Camera,
-  Download,
-  Gauge,
-  Grid3x3,
-  ImageDown,
-  ScanLine,
-  Sparkles,
-  Table2,
-} from 'lucide-vue-next'
+import { Camera, Download, Gauge, Grid3x3, ImageDown, ScanLine, Sparkles, Table2 } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
 import PanelCard from '@/components/common/PanelCard.vue'
 import NumberField from '@/components/common/NumberField.vue'
@@ -70,9 +61,7 @@ const pattern = computed(() => result.value.pattern)
 const wavelength = computed(() => electronWavelength(voltageKv.value))
 const cameraConstant = computed(() => pattern.value?.cameraConstant ?? wavelength.value * cameraLengthMm.value)
 
-const maxR = computed(() =>
-  displayUnit.value === 'mm' ? cameraConstant.value * maxG.value : maxG.value,
-)
+const maxR = computed(() => (displayUnit.value === 'mm' ? cameraConstant.value * maxG.value : maxG.value))
 
 const points = computed<DiffractionPoint[]>(() => {
   const p = pattern.value
@@ -83,9 +72,7 @@ const points = computed<DiffractionPoint[]>(() => {
     label: spot.isCenter ? '000' : formatHkl(spot.hkl, 'none'),
     isCenter: spot.isCenter,
     intensity: spot.intensityRel,
-    meta: spot.isCenter
-      ? '透射斑'
-      : `d = ${spot.d.toFixed(4)} Å · I = ${spot.intensityRel.toFixed(1)}%`,
+    meta: spot.isCenter ? '透射斑' : `d = ${spot.d.toFixed(4)} Å · I = ${spot.intensityRel.toFixed(1)}%`,
   }))
 })
 
@@ -149,7 +136,11 @@ function exportCsv() {
       ].join(','),
     )
   }
-  downloadText(lines.join('\n'), safeFilename(`SAED_${formatZone(p.zone).replace(/[\[\]\s]/g, '')}_${timestamp()}`, 'csv'), 'text/csv;charset=utf-8')
+  downloadText(
+    lines.join('\n'),
+    safeFilename(`SAED_${formatZone(p.zone).replace(/[\[\]\s]/g, '')}_${timestamp()}`, 'csv'),
+    'text/csv;charset=utf-8',
+  )
   ElMessage.success('已导出斑点表 CSV')
 }
 
@@ -177,16 +168,12 @@ onMounted(() => {
   <ToolPage
     title="带轴电子衍射模拟"
     subtitle="选择晶体结构与带轴，计算 ZOLZ 斑点位置、结构因子强度与指数标注，并可直接导出图片或表格。"
-    eyebrow="晶体学计算 · 02"
+    eyebrow="衍射模拟 · 01"
     doc="/docs/userguide/saed"
   >
     <template #actions>
-      <el-button size="small" :disabled="!pattern" @click="exportPng">
-        <ImageDown class="btn-icon" /> PNG
-      </el-button>
-      <el-button size="small" :disabled="!pattern" @click="exportCsv">
-        <Download class="btn-icon" /> CSV
-      </el-button>
+      <el-button size="small" :disabled="!pattern" @click="exportPng"> <ImageDown class="btn-icon" /> PNG </el-button>
+      <el-button size="small" :disabled="!pattern" @click="exportCsv"> <Download class="btn-icon" /> CSV </el-button>
     </template>
 
     <template #config>
@@ -260,10 +247,18 @@ onMounted(() => {
         <div v-if="selectedSpot">
           <div class="spot-hkl mono">{{ formatHkl(selectedSpot.hkl, 'round') }}</div>
           <div class="kv-list mono">
-            <div class="kv"><span>d</span><span>{{ selectedSpot.d.toFixed(6) }} Å</span></div>
-            <div class="kv"><span>|g|</span><span>{{ selectedSpot.g.toFixed(6) }} Å⁻¹</span></div>
-            <div class="kv"><span>I</span><span>{{ selectedSpot.intensityRel.toFixed(2) }} %</span></div>
-            <div class="kv"><span>R</span><span>{{ Math.hypot(selectedSpot.rx, selectedSpot.ry).toFixed(3) }} mm</span></div>
+            <div class="kv">
+              <span>d</span><span>{{ selectedSpot.d.toFixed(6) }} Å</span>
+            </div>
+            <div class="kv">
+              <span>|g|</span><span>{{ selectedSpot.g.toFixed(6) }} Å⁻¹</span>
+            </div>
+            <div class="kv">
+              <span>I</span><span>{{ selectedSpot.intensityRel.toFixed(2) }} %</span>
+            </div>
+            <div class="kv">
+              <span>R</span><span>{{ Math.hypot(selectedSpot.rx, selectedSpot.ry).toFixed(3) }} mm</span>
+            </div>
           </div>
         </div>
         <div v-else class="small dim">在图上或下方表格中点击一个斑点。</div>
@@ -271,11 +266,21 @@ onMounted(() => {
 
       <PanelCard v-if="basisInfo" title="二维基矢" :icon="Grid3x3">
         <div class="kv-list mono">
-          <div class="kv"><span>b₁</span><span>{{ formatHkl(basisInfo.b1, 'square') }}</span></div>
-          <div class="kv"><span>b₂</span><span>{{ formatHkl(basisInfo.b2, 'square') }}</span></div>
-          <div class="kv"><span>|g₁|</span><span>{{ basisInfo.len1.toFixed(5) }} Å⁻¹</span></div>
-          <div class="kv"><span>|g₂|</span><span>{{ basisInfo.len2.toFixed(5) }} Å⁻¹</span></div>
-          <div class="kv"><span>夹角</span><span>{{ basisInfo.angleDeg.toFixed(3) }}°</span></div>
+          <div class="kv">
+            <span>b₁</span><span>{{ formatHkl(basisInfo.b1, 'square') }}</span>
+          </div>
+          <div class="kv">
+            <span>b₂</span><span>{{ formatHkl(basisInfo.b2, 'square') }}</span>
+          </div>
+          <div class="kv">
+            <span>|g₁|</span><span>{{ basisInfo.len1.toFixed(5) }} Å⁻¹</span>
+          </div>
+          <div class="kv">
+            <span>|g₂|</span><span>{{ basisInfo.len2.toFixed(5) }} Å⁻¹</span>
+          </div>
+          <div class="kv">
+            <span>夹角</span><span>{{ basisInfo.angleDeg.toFixed(3) }}°</span>
+          </div>
         </div>
         <p class="tiny dim" style="margin-top: 7px">
           斑点位置 R = Lλ·|g|；强度为运动学近似 I ∝ |F|²，未包含动力学效应与 HOLZ。
@@ -285,10 +290,18 @@ onMounted(() => {
       <PanelCard title="标定" :icon="Camera">
         <div class="small muted" style="line-height: 1.65">
           已知 R 与 d 可由 Lλ = R·d 求相机常数；也可由当前 Lλ 反推未知 d：
-          <b class="mono" style="color: var(--accent)">{{ Number.isFinite(dAtMeasuredR) ? dAtMeasuredR.toFixed(5) : '—' }} Å</b>
+          <b class="mono" style="color: var(--accent)"
+            >{{ Number.isFinite(dAtMeasuredR) ? dAtMeasuredR.toFixed(5) : '—' }} Å</b
+          >
           （R = {{ measuredR }} mm）。
         </div>
-        <el-button size="small" text type="primary" style="padding-left: 0" @click="router.push('/docs/cookbook/saed-indexing')">
+        <el-button
+          size="small"
+          text
+          type="primary"
+          style="padding-left: 0"
+          @click="router.push('/docs/cookbook/saed-indexing')"
+        >
           阅读 SAED 标定步骤
         </el-button>
       </PanelCard>
@@ -303,7 +316,9 @@ onMounted(() => {
       <div class="saed-stats">
         <div v-for="item in stats" :key="item.label" class="stat">
           <div class="stat__label">{{ item.label }}</div>
-          <div class="stat__value">{{ item.value }}<span class="stat__unit">{{ item.unit }}</span></div>
+          <div class="stat__value">
+            {{ item.value }}<span class="stat__unit">{{ item.unit }}</span>
+          </div>
         </div>
       </div>
 

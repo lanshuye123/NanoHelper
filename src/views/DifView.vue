@@ -18,13 +18,7 @@ import FileDrop from '@/components/common/FileDrop.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import NumberField from '@/components/common/NumberField.vue'
 import SciChart, { type ChartSeries } from '@/components/chart/SciChart.vue'
-import {
-  parseDif,
-  exportDif,
-  blockX,
-  type DifFile,
-  type DifExportOptions,
-} from '@/core/io/dif'
+import { parseDif, exportDif, blockX, type DifFile, type DifExportOptions } from '@/core/io/dif'
 import { parseRecipe, type Recipe } from '@/core/pipeline/recipe'
 import { mappingSummary } from '@/core/pipeline/jade'
 import { downloadText, readFileText, safeFilename, timestamp } from '@/utils/download'
@@ -55,12 +49,12 @@ const roleLabels: Record<string, string> = {
 }
 
 const roleColor: Record<string, string> = {
-  raw: '#22d3ee',
-  background: '#94a3b8',
-  fitted: '#a78bfa',
-  overall: '#fbbf24',
-  difference: '#fb7185',
-  unknown: '#60a5fa',
+  raw: '#3b9fdd',
+  background: '#8ba0b8',
+  fitted: '#8b7ce8',
+  overall: '#e0a23c',
+  difference: '#e06578',
+  unknown: '#4a9fe0',
 }
 
 const hasDif = computed(() => !!dif.value)
@@ -92,7 +86,7 @@ const series = computed<ChartSeries[]>(() => {
       label: `${b.name}`,
       x: blockX(b),
       y: b.y,
-      color: roleColor[b.role] ?? '#60a5fa',
+      color: roleColor[b.role] ?? '#4a9fe0',
       width: b.role === 'raw' ? 1.5 : b.role === 'background' ? 1 : 1.1,
       dash: b.role === 'fitted' ? [4, 3] : undefined,
       opacity: b.role === 'fitted' ? 0.9 : 1,
@@ -135,7 +129,11 @@ const stats = computed(() => {
   return [
     { label: '曲线块', value: dif.value.blocks.length.toString(), unit: 'blocks' },
     { label: '公共网格', value: exportResult.value?.gridSize?.toLocaleString() ?? '—', unit: 'pts' },
-    { label: 'Rp', value: exportResult.value?.rFactor != null ? exportResult.value.rFactor.toFixed(2) : '—', unit: '%' },
+    {
+      label: 'Rp',
+      value: exportResult.value?.rFactor != null ? exportResult.value.rFactor.toFixed(2) : '—',
+      unit: '%',
+    },
     { label: '波长', value: wavelength.value ? wavelength.value.toFixed(5) : '—', unit: 'Å' },
   ]
 })
@@ -245,9 +243,7 @@ function exportTable() {
         />
         <div v-if="dif" class="file-info">
           <div class="file-info__title">{{ dif.title ?? fileName }}</div>
-          <div class="file-info__meta mono">
-            {{ fileName }} · {{ dif.date }} {{ dif.time }} · {{ dif.mode }}
-          </div>
+          <div class="file-info__meta mono">{{ fileName }} · {{ dif.date }} {{ dif.time }} · {{ dif.mode }}</div>
         </div>
         <div v-if="dif" class="block-list">
           <button
@@ -316,9 +312,7 @@ function exportTable() {
         <div v-if="recipe" class="recipe-box">
           <div class="recipe-box__name">{{ recipe.name }}</div>
           <div v-if="recipe.mapping" class="mono recipe-box__map">{{ mappingSummary(recipe.mapping) }}</div>
-          <div v-if="recipe.source.xLabel" class="tiny dim">
-            {{ recipe.source.xLabel }} ({{ recipe.source.xUnit }})
-          </div>
+          <div v-if="recipe.source.xLabel" class="tiny dim">{{ recipe.source.xLabel }} ({{ recipe.source.xUnit }})</div>
           <div v-for="warning in recipeWarnings" :key="warning" class="issue issue--warning">
             <span class="issue__icon" />
             <div>{{ warning }}</div>
@@ -328,7 +322,18 @@ function exportTable() {
         <label v-else class="recipe-upload">
           <Upload />
           <span>选择 .recipe.json</span>
-          <input type="file" accept=".json,application/json" hidden @change="($event) => { const f = ($event.target as HTMLInputElement).files?.[0]; if (f) loadRecipe(f); ($event.target as HTMLInputElement).value = '' }" />
+          <input
+            type="file"
+            accept=".json,application/json"
+            hidden
+            @change="
+              ($event) => {
+                const f = ($event.target as HTMLInputElement).files?.[0]
+                if (f) loadRecipe(f)
+                ;($event.target as HTMLInputElement).value = ''
+              }
+            "
+          />
         </label>
       </PanelCard>
     </template>
@@ -338,9 +343,7 @@ function exportTable() {
         <div v-if="exportResult?.rFactor != null" class="rwp">
           <div class="rwp__value mono">{{ exportResult.rFactor.toFixed(3) }}<span>%</span></div>
           <div class="rwp__label">Rp = Σ|Yobs − Ycalc| / Σ|Yobs|</div>
-          <div class="rwp__hint">
-            仅使用 Raw 与 Overall 曲线，不含权重；用于快速判断拟合是否合理。
-          </div>
+          <div class="rwp__hint">仅使用 Raw 与 Overall 曲线，不含权重；用于快速判断拟合是否合理。</div>
         </div>
         <div v-else class="small dim">没有同时包含 Raw 与 Overall 曲线，无法计算 Rp。</div>
       </PanelCard>
@@ -357,8 +360,7 @@ function exportTable() {
 
       <PanelCard title="块说明" :icon="FileOutput">
         <p class="small muted" style="line-height: 1.65">
-          Jade 的拟合峰块可能只覆盖局部角度范围。导出到公共网格时，区间外默认补 0；
-          切换为 NaN 可在 Origin 中留下断点。
+          Jade 的拟合峰块可能只覆盖局部角度范围。导出到公共网格时，区间外默认补 0； 切换为 NaN 可在 Origin 中留下断点。
         </p>
       </PanelCard>
     </template>
@@ -376,7 +378,8 @@ function exportTable() {
           Jade 导出的 DIF 由「文件头 → 参数行 → Y 数据」循环组成。参数行包含起始角、步长、
           靶材、波长、终止角与点数；不同拟合块可以使用不同的角度范围。
         </p>
-        <pre class="mono dif-sample">10/20/26 10:16  FIT Red Paint Pigment Mixture
+        <pre class="mono dif-sample">
+10/20/26 10:16  FIT Red Paint Pigment Mixture
  20  0.02  4 Cu 1.54056  78  2901 (Raw Pattern)
  372  403  384  390  429  418  460  401
  ...
@@ -391,19 +394,14 @@ function exportTable() {
       <div class="dif-stats">
         <div v-for="item in stats" :key="item.label" class="stat">
           <div class="stat__label">{{ item.label }}</div>
-          <div class="stat__value">{{ item.value }}<span class="stat__unit">{{ item.unit }}</span></div>
+          <div class="stat__value">
+            {{ item.value }}<span class="stat__unit">{{ item.unit }}</span>
+          </div>
         </div>
       </div>
 
       <PanelCard title="曲线预览" :icon="Layers" hint="点击左侧色块可切换曲线">
-        <SciChart
-          :series="series"
-          x-label="2θ"
-          x-unit="°"
-          y-label="Intensity"
-          y-unit="counts"
-          :height="380"
-        />
+        <SciChart :series="series" x-label="2θ" x-unit="°" y-label="Intensity" y-unit="counts" :height="380" />
       </PanelCard>
 
       <PanelCard v-if="exportResult?.warnings.length" title="导出提示" :icon="CheckCircle2">
@@ -475,7 +473,9 @@ function exportTable() {
   cursor: pointer;
   text-align: left;
   width: 100%;
-  transition: background 0.14s, border-color 0.14s;
+  transition:
+    background 0.14s,
+    border-color 0.14s;
 }
 
 .block-row:hover {

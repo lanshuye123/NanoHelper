@@ -64,7 +64,12 @@ const canvas = ref<HTMLCanvasElement | null>(null)
 const tooltip = ref<HTMLDivElement | null>(null)
 const size = reactive({ w: 0, h: 0, dpr: 1 })
 const viewport = ref<{ x0: number; x1: number; y0: number; y1: number } | null>(null)
-const hover = ref<{ px: number; py: number; x: number; values: Array<{ label: string; y: number; color: string }> } | null>(null)
+const hover = ref<{
+  px: number
+  py: number
+  x: number
+  values: Array<{ label: string; y: number; color: string }>
+} | null>(null)
 const dragging = ref(false)
 
 let ctx: CanvasRenderingContext2D | null = null
@@ -73,12 +78,12 @@ let dragStart: { px: number; py: number; x0: number; x1: number; y0: number; y1:
 let lastSignature = ''
 
 const palette = () => [
-  cssVar('--plot-1', '#22d3ee'),
-  cssVar('--plot-2', '#fbbf24'),
-  cssVar('--plot-3', '#a78bfa'),
-  cssVar('--plot-4', '#fb7185'),
-  cssVar('--plot-5', '#34d399'),
-  cssVar('--plot-6', '#60a5fa'),
+  cssVar('--plot-1', '#2f7fc1'),
+  cssVar('--plot-2', '#d08a2e'),
+  cssVar('--plot-3', '#6f5bd4'),
+  cssVar('--plot-4', '#d04f6e'),
+  cssVar('--plot-5', '#2f9e7e'),
+  cssVar('--plot-6', '#4aa8e0'),
 ]
 
 function cssVar(name: string, fallback: string): string {
@@ -256,14 +261,14 @@ function drawScene(context: CanvasRenderingContext2D, width: number, height: num
 
   context.clearRect(0, 0, width, height)
   if (exportMode) {
-    context.fillStyle = cssVar('--surface', '#0e1626')
+    context.fillStyle = cssVar('--surface', '#ffffff')
     context.fillRect(0, 0, width, height)
   }
 
-  const textColor = cssVar('--text-3', '#6c819f')
-  const text2 = cssVar('--text-2', '#a3b4cd')
-  const gridColor = cssVar('--grid-line', 'rgba(148,181,224,0.09)')
-  const accent = cssVar('--accent', '#22d3ee')
+  const textColor = cssVar('--text-3', '#7b91a8')
+  const text2 = cssVar('--text-2', '#4a6580')
+  const gridColor = cssVar('--grid-line', 'rgba(25,75,120,0.07)')
+  const accent = cssVar('--accent', '#2f7fc1')
 
   const xTicks = niceTicks(vp.x0, vp.x1, props.compact ? 4 : 6)
   const yTicks = props.logY ? logTicks(vp.y0, vp.y1) : niceTicks(vp.y0, vp.y1, props.compact ? 4 : 6)
@@ -289,7 +294,7 @@ function drawScene(context: CanvasRenderingContext2D, width: number, height: num
   }
 
   // axis border
-  context.strokeStyle = cssVar('--border', '#1d2b45')
+  context.strokeStyle = cssVar('--border', '#d8e5f2')
   context.lineWidth = 1
   context.strokeRect(plot.x + 0.5, plot.y + 0.5, plot.w - 1, plot.h - 1)
 
@@ -410,7 +415,7 @@ function drawScene(context: CanvasRenderingContext2D, width: number, height: num
   for (const marker of props.markers) {
     const px = mapX(marker.x, vp, plot)
     if (px < plot.x || px > plot.x + plot.w) continue
-    context.strokeStyle = marker.color ?? cssVar('--warn', '#fbbf24')
+    context.strokeStyle = marker.color ?? cssVar('--warn', '#b7791f')
     context.globalAlpha = 0.7
     context.setLineDash([3, 3])
     context.lineWidth = 1
@@ -421,7 +426,7 @@ function drawScene(context: CanvasRenderingContext2D, width: number, height: num
     context.setLineDash([])
     context.globalAlpha = 1
     if (marker.label) {
-      context.fillStyle = marker.color ?? cssVar('--warn', '#fbbf24')
+      context.fillStyle = marker.color ?? cssVar('--warn', '#b7791f')
       context.font = `9.5px ${cssVar('--font-mono', 'monospace')}`
       context.textAlign = 'center'
       context.textBaseline = 'bottom'
@@ -449,12 +454,11 @@ function drawScene(context: CanvasRenderingContext2D, width: number, height: num
       context.beginPath()
       context.arc(hx, py, 3.2, 0, Math.PI * 2)
       context.fill()
-      context.strokeStyle = cssVar('--surface', '#0e1626')
+      context.strokeStyle = cssVar('--surface', '#ffffff')
       context.lineWidth = 1.5
       context.stroke()
     })
   }
-
 
   // legend
   if (props.showLegend && visibleSeries.length > 1) {
@@ -767,9 +771,7 @@ defineExpose({ reset, exportPNG })
         class="chart__tooltip"
         :style="{ left: `${Math.min(hover.px + 14, size.w - 190)}px`, top: `${Math.max(hover.py - 10, 6)}px` }"
       >
-        <div class="chart__tooltip-x mono">
-          {{ xLabel || 'X' }} = {{ hover.x.toPrecision(6) }} {{ xUnit }}
-        </div>
+        <div class="chart__tooltip-x mono">{{ xLabel || 'X' }} = {{ hover.x.toPrecision(6) }} {{ xUnit }}</div>
         <div v-for="v in hover.values" :key="v.label" class="chart__tooltip-row">
           <span class="chart__tooltip-dot" :style="{ background: v.color }" />
           <span class="chart__tooltip-label">{{ v.label }}</span>
@@ -778,9 +780,7 @@ defineExpose({ reset, exportPNG })
       </div>
     </div>
     <div class="chart__foot">
-      <span class="chart__hint">
-        滚轮缩放 X · Alt/⌘+滚轮缩放 Y · 拖拽平移 · 双击复位
-      </span>
+      <span class="chart__hint"> 滚轮缩放 X · Alt/⌘+滚轮缩放 Y · 拖拽平移 · 双击复位 </span>
       <span v-if="logY" class="chip tiny">log Y</span>
     </div>
   </div>

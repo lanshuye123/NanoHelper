@@ -5,12 +5,12 @@ export type ThemeMode = 'dark' | 'light'
 
 function readTheme(): ThemeMode {
   try {
-    const stored = localStorage.getItem('ctb.theme')
+    const stored = localStorage.getItem('ctb.theme.v2')
     if (stored === 'light' || stored === 'dark') return stored
   } catch {
     /* ignore */
   }
-  return 'dark'
+  return 'light'
 }
 
 function readCollapsed(): boolean {
@@ -31,9 +31,9 @@ export const useSettingsStore = defineStore('settings', () => {
     document.documentElement.classList.toggle('dark', theme.value === 'dark')
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', theme.value === 'dark' ? '#070b14' : '#f4f7fc')
+      ?.setAttribute('content', theme.value === 'dark' ? '#07121d' : '#edf4fb')
     try {
-      localStorage.setItem('ctb.theme', theme.value)
+      localStorage.setItem('ctb.theme.v2', theme.value)
     } catch {
       /* ignore */
     }

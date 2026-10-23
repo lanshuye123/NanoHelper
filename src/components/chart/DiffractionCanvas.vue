@@ -49,6 +49,24 @@ function cssVar(name: string, fallback: string): string {
   return value || fallback
 }
 
+function withAlpha(color: string, alpha: number): string {
+  const hex = color.trim()
+  const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex)
+  if (!match) return color
+  const raw = match[1]
+  const full =
+    raw.length === 3
+      ? raw
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : raw
+  const r = parseInt(full.slice(0, 2), 16)
+  const g = parseInt(full.slice(2, 4), 16)
+  const b = parseInt(full.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 const maxRadius = computed(() => Math.max(props.maxR, 1e-6))
 
 function schedule() {
@@ -102,9 +120,9 @@ function draw(context: CanvasRenderingContext2D, width: number, height: number, 
 
   if (!exportMode) {
     const gradient = context.createRadialGradient(cx, cy, 0, cx, cy, radius * 1.15)
-    gradient.addColorStop(0, 'rgba(34,211,238,0.07)')
-    gradient.addColorStop(0.6, 'rgba(34,211,238,0.015)')
-    gradient.addColorStop(1, 'rgba(0,0,0,0)')
+    gradient.addColorStop(0, withAlpha(accent, 0.08))
+    gradient.addColorStop(0.6, withAlpha(accent, 0.02))
+    gradient.addColorStop(1, withAlpha(accent, 0))
     context.fillStyle = gradient
     context.fillRect(0, 0, width, height)
   }

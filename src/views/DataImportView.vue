@@ -51,7 +51,11 @@ const stats = computed(() => {
   if (!range) return null
   return [
     { label: '数据点', value: range.points.toLocaleString(), unit: 'pts' },
-    { label: 'X 范围', value: `${range.xMin.toFixed(2)} – ${range.xMax.toFixed(2)}`, unit: project.derived?.meta.xUnit },
+    {
+      label: 'X 范围',
+      value: `${range.xMin.toFixed(2)} – ${range.xMax.toFixed(2)}`,
+      unit: project.derived?.meta.xUnit,
+    },
     { label: '中位步长', value: range.stepMedian.toPrecision(4), unit: project.derived?.meta.xUnit },
     { label: '最大强度', value: range.yMax.toPrecision(6), unit: project.derived?.meta.yUnit },
   ]
@@ -68,7 +72,7 @@ const chartSeries = computed<ChartSeries[]>(() => {
       label: mapping ? '映射输入' : '原始',
       x: compared.x,
       y: compared.y,
-      color: '#94a3b8',
+      color: '#8ba0b8',
       width: 1,
       opacity: 0.55,
       type: 'line',
@@ -79,7 +83,7 @@ const chartSeries = computed<ChartSeries[]>(() => {
       label: '处理后',
       x: project.derived.x,
       y: project.derived.y,
-      color: '#22d3ee',
+      color: '#3b9fdd',
       width: 1.6,
       type: 'line',
       fill: true,
@@ -228,11 +232,7 @@ function goJade() {
 function saveProject() {
   try {
     const content = project.exportProject('0.1.0')
-    downloadText(
-      content,
-      safeFilename(project.source?.name ?? 'project', 'xtalbox.json'),
-      'application/json',
-    )
+    downloadText(content, safeFilename(project.source?.name ?? 'project', 'xtalbox.json'), 'application/json')
     ElMessage.success('工程已保存（含原始数据与步骤）')
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : String(error))
@@ -275,9 +275,7 @@ async function openProject(files: File[]) {
       <el-button v-if="hasData" size="small" :disabled="!project.future.length" @click="project.redo()">
         <Redo2 class="btn-icon" /> 重做
       </el-button>
-      <el-button v-if="hasData" size="small" @click="resetSteps">
-        <RotateCcw class="btn-icon" /> 重置
-      </el-button>
+      <el-button v-if="hasData" size="small" @click="resetSteps"> <RotateCcw class="btn-icon" /> 重置 </el-button>
       <el-button v-if="hasData" type="primary" size="small" @click="goJade">
         Jade 导出 <ArrowRight class="btn-icon" />
       </el-button>
@@ -294,18 +292,26 @@ async function openProject(files: File[]) {
           <div v-if="project.source.fileName" class="source-info__file mono">{{ project.source.fileName }}</div>
         </div>
         <div class="btn-row" style="margin-top: 10px">
-          <el-button size="small" @click="pasteOpen = true">
-            <ClipboardPaste class="btn-icon" /> 粘贴文本
-          </el-button>
+          <el-button size="small" @click="pasteOpen = true"> <ClipboardPaste class="btn-icon" /> 粘贴文本 </el-button>
           <el-button size="small" :disabled="!project.hasData" @click="saveProject">
             <Save class="btn-icon" /> 保存工程
           </el-button>
-          <el-button size="small" @click="projectInput?.click()">
-            <FolderOpen class="btn-icon" /> 打开工程
-          </el-button>
+          <el-button size="small" @click="projectInput?.click()"> <FolderOpen class="btn-icon" /> 打开工程 </el-button>
           <el-button size="small" :disabled="!project.hasData" @click="project.clear()">清空</el-button>
         </div>
-        <input ref="projectInput" type="file" accept=".json,.xtalbox" hidden @change="($event) => { const f = ($event.target as HTMLInputElement).files?.[0]; if (f) openProject([f]); ($event.target as HTMLInputElement).value = '' }" />
+        <input
+          ref="projectInput"
+          type="file"
+          accept=".json,.xtalbox"
+          hidden
+          @change="
+            ($event) => {
+              const f = ($event.target as HTMLInputElement).files?.[0]
+              if (f) openProject([f])
+              ;($event.target as HTMLInputElement).value = ''
+            }
+          "
+        />
         <div v-if="!project.hasData" class="hint-block">
           <p class="small muted">支持 CSV / TSV / TXT / XY / DAT / DIF / XRDML / UXD。</p>
           <p class="tiny dim">文件只在浏览器本地解析，不会上传。</p>
@@ -314,9 +320,7 @@ async function openProject(files: File[]) {
 
       <PanelCard v-if="project.hasData" title="变换步骤" :icon="Sparkles" :hint="`${steps.length} 步`">
         <el-dropdown trigger="click" style="width: 100%" @command="onAddStepCommand">
-          <el-button size="small" style="width: 100%">
-            <Plus class="btn-icon" /> 添加处理步骤
-          </el-button>
+          <el-button size="small" style="width: 100%"> <Plus class="btn-icon" /> 添加处理步骤 </el-button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item v-for="item in addStepItems" :key="item.type" :command="item.type">
@@ -350,7 +354,8 @@ async function openProject(files: File[]) {
 
       <PanelCard v-if="pending?.columns" title="列映射" :icon="Database">
         <p class="small muted" style="margin-bottom: 10px">
-          文件包含 {{ pending.columns.length }} 列，选择用于 X/Y 的列。切换后会基于该文件重新建立数据集（已添加的步骤会清空）。
+          文件包含 {{ pending.columns.length }} 列，选择用于 X/Y
+          的列。切换后会基于该文件重新建立数据集（已添加的步骤会清空）。
         </p>
         <div class="grid-2">
           <label class="field">
@@ -421,9 +426,7 @@ async function openProject(files: File[]) {
           @files="handleFiles"
         />
         <div class="import-actions">
-          <el-button size="small" @click="pasteOpen = true">
-            <ClipboardPaste class="btn-icon" /> 粘贴文本
-          </el-button>
+          <el-button size="small" @click="pasteOpen = true"> <ClipboardPaste class="btn-icon" /> 粘贴文本 </el-button>
           <span class="tiny dim">也可以直接从剪贴板粘贴两列数据</span>
         </div>
       </PanelCard>
@@ -620,7 +623,10 @@ async function openProject(files: File[]) {
   color: var(--text-2);
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    transform 0.15s;
 }
 
 .sample-card:hover:not(:disabled) {
@@ -704,7 +710,9 @@ async function openProject(files: File[]) {
   border: 1px solid var(--border-soft);
   color: var(--text-2);
   text-decoration: none;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .next-link:hover {

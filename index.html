@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
@@ -8,17 +8,15 @@
       name="description"
       content="CrystalToolBox 是一个纯前端、本地运行的纳米材料与晶体学工具箱：XRD/光谱数据预处理与 Jade 导出、DIF 转 XY、倒易空间与晶向计算、SAED 与 XRD 模拟。"
     />
-    <meta name="theme-color" content="#070b14" />
+    <meta name="theme-color" content="#174f7f" />
     <title>CrystalToolBox · 纳米材料与晶体学工具箱</title>
     <script>
       // Apply the persisted theme before first paint to avoid a flash.
       try {
-        var t = localStorage.getItem('ctb.theme')
+        var t = localStorage.getItem('ctb.theme.v2')
         if (t === 'light' || t === 'dark') {
           document.documentElement.dataset.theme = t
           if (t === 'dark') document.documentElement.classList.add('dark')
-        } else {
-          document.documentElement.classList.add('dark')
         }
       } catch (e) {}
     </script>

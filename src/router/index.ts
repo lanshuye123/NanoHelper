@@ -8,6 +8,7 @@ const toolRoutes: RouteRecordRaw[] = tools.map((tool) => ({
   meta: {
     title: tool.title,
     group: tool.group,
+    module: tool.group,
     toolId: tool.id,
     doc: tool.doc,
   },
@@ -18,26 +19,26 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'dashboard',
     component: () => import('@/views/DashboardView.vue'),
-    meta: { title: '工作台' },
+    meta: { title: '首页', module: 'home' },
   },
   ...toolRoutes,
   {
     path: '/docs/:section/:slug?',
     name: 'docs',
     component: () => import('@/views/DocsView.vue'),
-    meta: { title: '文档中心' },
+    meta: { title: '文档中心', module: 'docs' },
   },
   {
     path: '/about',
     name: 'about',
     component: () => import('@/views/AboutView.vue'),
-    meta: { title: '关于' },
+    meta: { title: '关于', module: 'about' },
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundView.vue'),
-    meta: { title: '页面不存在' },
+    meta: { title: '页面不存在', module: 'home' },
   },
 ]
 

@@ -2,17 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import {
-  Atom,
-  FileUp,
-  FlaskConical,
-  Grid3x3,
-  Info,
-  Layers,
-  Pencil,
-  ScanLine,
-  Sparkles,
-} from 'lucide-vue-next'
+import { Atom, FileUp, FlaskConical, Grid3x3, Info, Layers, Pencil, ScanLine, Sparkles } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
 import PanelCard from '@/components/common/PanelCard.vue'
 import NumberField from '@/components/common/NumberField.vue'
@@ -97,7 +87,13 @@ const reflections = computed(() => {
         if (sf.absent) continue
         const d = dSpacing(l, [h, k, li])
         const key = d.toFixed(4)
-        const candidate = { hkl: [h, k, li] as [number, number, number], d, g: gLength(l, [h, k, li]), f2: sf.f2, absF: sf.absF }
+        const candidate = {
+          hkl: [h, k, li] as [number, number, number],
+          d,
+          g: gLength(l, [h, k, li]),
+          f2: sf.f2,
+          absF: sf.absF,
+        }
         const existing = byD.get(key)
         if (
           !existing ||
@@ -170,13 +166,11 @@ function loadPreset(id: string) {
   <ToolPage
     title="晶体结构"
     subtitle="从 CIF 读取晶胞、空间群与原子位点，按对称操作展开为完整晶胞，并检查密度、公式与低角反射。"
-    eyebrow="晶体学计算 · 04"
+    eyebrow="晶体几何 · 02"
     doc="/docs/userguide/structure"
   >
     <template #actions>
-      <el-button size="small" @click="pasteOpen = true">
-        <Pencil class="btn-icon" /> 粘贴 CIF
-      </el-button>
+      <el-button size="small" @click="pasteOpen = true"> <Pencil class="btn-icon" /> 粘贴 CIF </el-button>
       <el-button size="small" :loading="loading" @click="fileInput?.click()">
         <FileUp class="btn-icon" /> 导入 CIF
       </el-button>
@@ -230,9 +224,7 @@ function loadPreset(id: string) {
             @update:model-value="setCell(field.key, $event)"
           />
         </div>
-        <div class="cell-note tiny dim">
-          修改参数会立即影响密度、d 值与 SAED/XRD 模拟（共享当前结构）。
-        </div>
+        <div class="cell-note tiny dim">修改参数会立即影响密度、d 值与 SAED/XRD 模拟（共享当前结构）。</div>
       </PanelCard>
     </template>
 
@@ -242,11 +234,21 @@ function loadPreset(id: string) {
           <div class="summary__name">{{ store.label }}</div>
           <div class="summary__formula">{{ formula }}</div>
           <div class="kv-list mono">
-            <div class="kv"><span>空间群</span><span>{{ store.current.spaceGroupSymbol ?? '—' }}</span></div>
-            <div class="kv"><span>原子数</span><span>{{ store.atomCount }}</span></div>
-            <div class="kv"><span>体积</span><span>{{ volume.toFixed(4) }} Å³</span></div>
-            <div class="kv"><span>密度</span><span>{{ Number.isFinite(density) ? density.toFixed(4) : '—' }} g/cm³</span></div>
-            <div class="kv"><span>晶胞质量</span><span>{{ cellMass.toFixed(3) }} u</span></div>
+            <div class="kv">
+              <span>空间群</span><span>{{ store.current.spaceGroupSymbol ?? '—' }}</span>
+            </div>
+            <div class="kv">
+              <span>原子数</span><span>{{ store.atomCount }}</span>
+            </div>
+            <div class="kv">
+              <span>体积</span><span>{{ volume.toFixed(4) }} Å³</span>
+            </div>
+            <div class="kv">
+              <span>密度</span><span>{{ Number.isFinite(density) ? density.toFixed(4) : '—' }} g/cm³</span>
+            </div>
+            <div class="kv">
+              <span>晶胞质量</span><span>{{ cellMass.toFixed(3) }} u</span>
+            </div>
           </div>
         </div>
       </PanelCard>
@@ -287,7 +289,9 @@ function loadPreset(id: string) {
       </div>
       <div class="stat">
         <div class="stat__label">理论密度</div>
-        <div class="stat__value">{{ Number.isFinite(density) ? density.toFixed(3) : '—' }}<span class="stat__unit">g/cm³</span></div>
+        <div class="stat__value">
+          {{ Number.isFinite(density) ? density.toFixed(3) : '—' }}<span class="stat__unit">g/cm³</span>
+        </div>
       </div>
       <div class="stat">
         <div class="stat__label">化学式</div>
@@ -298,10 +302,34 @@ function loadPreset(id: string) {
     <div class="two-col">
       <PanelCard title="晶胞与倒易参数" :icon="Grid3x3">
         <div v-if="lattice" class="kv-list mono">
-          <div class="kv"><span>a, b, c</span><span>{{ lattice.cell.a.toFixed(4) }}, {{ lattice.cell.b.toFixed(4) }}, {{ lattice.cell.c.toFixed(4) }} Å</span></div>
-          <div class="kv"><span>α, β, γ</span><span>{{ lattice.cell.alpha.toFixed(3) }}°, {{ lattice.cell.beta.toFixed(3) }}°, {{ lattice.cell.gamma.toFixed(3) }}°</span></div>
-          <div class="kv"><span>a*, b*, c*</span><span>{{ lattice.reciprocalParams.aStar.toFixed(5) }}, {{ lattice.reciprocalParams.bStar.toFixed(5) }}, {{ lattice.reciprocalParams.cStar.toFixed(5) }} Å⁻¹</span></div>
-          <div class="kv"><span>α*, β*, γ*</span><span>{{ lattice.reciprocalParams.alphaStar.toFixed(3) }}°, {{ lattice.reciprocalParams.betaStar.toFixed(3) }}°, {{ lattice.reciprocalParams.gammaStar.toFixed(3) }}°</span></div>
+          <div class="kv">
+            <span>a, b, c</span
+            ><span
+              >{{ lattice.cell.a.toFixed(4) }}, {{ lattice.cell.b.toFixed(4) }}, {{ lattice.cell.c.toFixed(4) }} Å</span
+            >
+          </div>
+          <div class="kv">
+            <span>α, β, γ</span
+            ><span
+              >{{ lattice.cell.alpha.toFixed(3) }}°, {{ lattice.cell.beta.toFixed(3) }}°,
+              {{ lattice.cell.gamma.toFixed(3) }}°</span
+            >
+          </div>
+          <div class="kv">
+            <span>a*, b*, c*</span
+            ><span
+              >{{ lattice.reciprocalParams.aStar.toFixed(5) }}, {{ lattice.reciprocalParams.bStar.toFixed(5) }},
+              {{ lattice.reciprocalParams.cStar.toFixed(5) }} Å⁻¹</span
+            >
+          </div>
+          <div class="kv">
+            <span>α*, β*, γ*</span
+            ><span
+              >{{ lattice.reciprocalParams.alphaStar.toFixed(3) }}°,
+              {{ lattice.reciprocalParams.betaStar.toFixed(3) }}°,
+              {{ lattice.reciprocalParams.gammaStar.toFixed(3) }}°</span
+            >
+          </div>
         </div>
         <p class="tiny dim" style="margin-top: 8px">
           所有参数由六个晶格参数实时计算；倒易空间采用晶体学约定（不含 2π）。
@@ -312,7 +340,11 @@ function loadPreset(id: string) {
         <div class="table-wrap refl-table">
           <table class="data">
             <thead>
-              <tr><th>(hkl)</th><th class="num">d (Å)</th><th class="num">|F|²</th></tr>
+              <tr>
+                <th>(hkl)</th>
+                <th class="num">d (Å)</th>
+                <th class="num">|F|²</th>
+              </tr>
             </thead>
             <tbody>
               <tr v-for="r in reflections" :key="r.hkl.join(',')">
@@ -385,7 +417,9 @@ function loadPreset(id: string) {
   background: var(--surface-2);
   cursor: pointer;
   text-align: center;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .drop-mini:hover {

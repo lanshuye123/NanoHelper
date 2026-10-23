@@ -6,24 +6,27 @@
 - Jade 拟合结果 `.dif` → **Origin** 多列数据，并按配方反算回原始坐标；
 - 倒易空间、晶带、**SAED** 与 **XRD** 模拟，CIF 结构导入。
 
-
 无需后端、无需账号，数据不离开浏览器。
 
 **在线地址：<https://nano.jamaccao.cn>** · **仓库：<https://github.com/lanshuye123/NanoHelper>**
 
-![工作台](docs/screenshots/home.png)
+浅蓝色—白色是默认主题，同时提供深色模式：
+
+![工作台 · 浅色](docs/screenshots/home.png)
+
+![工作台 · 深色](docs/screenshots/home-dark.png)
 
 ## 功能
 
-| 模块 | 内容 |
-|---|---|
-| 数据处理 | 多格式导入、列映射、裁剪/重采样/平滑/扣背底/Kα2/归一化、步骤账本、Jade 兼容性检查 |
-| Jade 导出 | 两列 `.xy`、`recipe.json`、工程文件 `.xtalbox.json` |
-| DIF → XY | 多块解析（Raw/Background/Fitted/Overall）、公共网格、Origin 宽表/堆叠/差值、Rp、配方反算、1/d 轴 |
-| 倒易空间 | 晶格/倒易参数、d 值、晶面/晶向夹角、晶带轴、点阵消光、二维倒易面 |
-| 电子衍射 | 带轴 SAED、结构因子强度、相机常数标定、PNG/CSV |
-| XRD | 理论谱、多重度/LP、Kα2、峰表、Scherrer、Williamson–Hall |
-| 晶体结构 | CIF 解析、对称展开、密度/化学式、低角反射预览、15 个预设 |
+| 模块      | 内容                                                                                             |
+| --------- | ------------------------------------------------------------------------------------------------ |
+| 数据处理  | 多格式导入、列映射、裁剪/重采样/平滑/扣背底/Kα2/归一化、步骤账本、Jade 兼容性检查                |
+| Jade 导出 | 两列 `.xy`、`recipe.json`、工程文件 `.xtalbox.json`                                              |
+| DIF → XY  | 多块解析（Raw/Background/Fitted/Overall）、公共网格、Origin 宽表/堆叠/差值、Rp、配方反算、1/d 轴 |
+| 倒易空间  | 晶格/倒易参数、d 值、晶面/晶向夹角、晶带轴、点阵消光、二维倒易面                                 |
+| 电子衍射  | 带轴 SAED、结构因子强度、相机常数标定、PNG/CSV                                                   |
+| XRD       | 理论谱、多重度/LP、Kα2、峰表、Scherrer、Williamson–Hall                                          |
+| 晶体结构  | CIF 解析、对称展开、密度/化学式、低角反射预览、15 个预设                                         |
 
 ## 技术栈
 

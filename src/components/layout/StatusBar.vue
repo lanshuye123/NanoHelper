@@ -19,6 +19,8 @@ const status = computed(() => {
   if (issues.some((i) => i.level === 'warning')) return 'warn'
   return 'ok'
 })
+
+const version = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0'
 </script>
 
 <template>
@@ -30,24 +32,25 @@ const status = computed(() => {
     <div class="status-center mono">{{ summary }}</div>
     <div class="status-right mono">
       <span v-if="project.jadeStep" class="status-item">Jade 映射已启用</span>
-      <span>v0.1.0</span>
+      <span class="status-version">CrystalToolBox v{{ version }}</span>
     </div>
   </footer>
 </template>
 
 <style scoped>
 .status-bar {
+  flex: 0 0 var(--status-h);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   height: var(--status-h);
   padding: 0 14px;
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  backdrop-filter: blur(10px);
-  font-size: 10px;
-  color: var(--text-3);
+  background: var(--status-bg);
+  color: var(--status-text);
+  border-top: 1px solid color-mix(in srgb, var(--nav-divider) 28%, transparent);
+  font-size: 9.5px;
+  letter-spacing: 0.01em;
   overflow: hidden;
 }
 
@@ -55,7 +58,7 @@ const status = computed(() => {
 .status-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: 0 0 auto;
 }
 
@@ -63,22 +66,22 @@ const status = computed(() => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--text-3);
+  background: rgba(200, 220, 238, 0.45);
 }
 
 .status-dot.is-ok {
-  background: var(--ok);
-  box-shadow: 0 0 0 3px var(--ok-soft);
+  background: #69e0a8;
+  box-shadow: 0 0 0 3px rgba(105, 224, 168, 0.14);
 }
 
 .status-dot.is-warn {
-  background: var(--warn);
-  box-shadow: 0 0 0 3px var(--warn-soft);
+  background: #f2c15c;
+  box-shadow: 0 0 0 3px rgba(242, 193, 92, 0.14);
 }
 
 .status-dot.is-error {
-  background: var(--danger);
-  box-shadow: 0 0 0 3px var(--danger-soft);
+  background: #ff8b9a;
+  box-shadow: 0 0 0 3px rgba(255, 139, 154, 0.16);
 }
 
 .status-center {
@@ -88,15 +91,24 @@ const status = computed(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 10px;
+  font-size: 9.5px;
+  color: color-mix(in srgb, var(--status-text) 84%, transparent);
 }
 
 .status-item {
-  color: var(--accent);
+  color: var(--status-strong);
+}
+
+.status-version {
+  color: color-mix(in srgb, var(--status-text) 78%, transparent);
 }
 
 @media (max-width: 860px) {
   .status-center {
+    display: none;
+  }
+
+  .status-version {
     display: none;
   }
 }

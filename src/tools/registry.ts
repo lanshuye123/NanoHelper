@@ -13,7 +13,7 @@ import {
   Upload,
 } from 'lucide-vue-next'
 
-export type ToolGroup = 'workspace' | 'data' | 'crystal'
+export type ToolGroup = 'data' | 'diffraction' | 'crystal'
 export type ToolStatus = 'stable' | 'beta'
 
 export interface ToolMeta {
@@ -29,9 +29,9 @@ export interface ToolMeta {
 }
 
 export const TOOL_GROUPS: Array<{ key: ToolGroup; label: string }> = [
-  { key: 'workspace', label: '工作台' },
   { key: 'data', label: '数据处理' },
-  { key: 'crystal', label: '晶体学计算' },
+  { key: 'diffraction', label: '衍射模拟' },
+  { key: 'crystal', label: '晶体几何' },
 ]
 
 export const tools: ToolMeta[] = [
@@ -83,7 +83,7 @@ export const tools: ToolMeta[] = [
     id: 'saed',
     title: '电子衍射模拟',
     subtitle: '带轴 SAED 斑点与指数',
-    group: 'crystal',
+    group: 'diffraction',
     path: '/crystal/saed',
     icon: ScanLine,
     status: 'stable',
@@ -94,7 +94,7 @@ export const tools: ToolMeta[] = [
     id: 'xrd',
     title: 'XRD 模拟与分析',
     subtitle: '理论谱、峰表、Scherrer / W–H',
-    group: 'crystal',
+    group: 'diffraction',
     path: '/crystal/xrd',
     icon: LineChart,
     status: 'stable',

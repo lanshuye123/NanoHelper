@@ -2,23 +2,15 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, ArrowRight, BookOpen, Search } from 'lucide-vue-next'
-import {
-  DOCS,
-  DOC_SECTIONS,
-  docPath,
-  docsBySection,
-  getDoc,
-  prevNext,
-  sectionLabel,
-  type DocEntry,
-} from '@/docs/manifest'
+import { ArrowLeft, ArrowRight, BookOpen, Menu } from 'lucide-vue-next'
+import { docPath, docsBySection, getDoc, prevNext, sectionLabel, type DocEntry } from '@/docs/manifest'
 import { loadDocSource, renderDoc, type Heading } from '@/docs/render'
+import { useSettingsStore } from '@/stores/settings'
 
 const route = useRoute()
 const router = useRouter()
+const settings = useSettingsStore()
 
-const query = ref('')
 const html = ref('')
 const headings = ref<Heading[]>([])
 const loading = ref(false)
@@ -26,24 +18,11 @@ const error = ref('')
 const activeHeading = ref('')
 let scrollContainer: HTMLElement | null = null
 
-const current = computed(() => getDoc(route.params.section as string | undefined, route.params.slug as string | undefined))
+const current = computed(() =>
+  getDoc(route.params.section as string | undefined, route.params.slug as string | undefined),
+)
 const section = computed(() => (current.value ? sectionLabel(current.value.section) : ''))
 const neighbours = computed(() => (current.value ? prevNext(current.value) : {}))
-
-const filtered = computed(() => {
-  const q = query.value.trim().toLowerCase()
-  if (!q) return DOCS
-  return DOCS.filter((doc) =>
-    [doc.title, doc.description, doc.section, ...(doc.keywords ?? [])].join(' ').toLowerCase().includes(q),
-  )
-})
-
-const groups = computed(() =>
-  DOC_SECTIONS.map((section) => ({
-    ...section,
-    docs: filtered.value.filter((d) => d.section === section.key).sort((a, b) => a.order - b.order),
-  })).filter((group) => group.docs.length > 0),
-)
 
 async function loadDoc(doc: DocEntry) {
   loading.value = true
@@ -135,36 +114,12 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="docs-page">
-    <aside class="docs-nav">
-      <div class="docs-search">
-        <Search class="docs-search__icon" />
-        <input v-model="query" type="search" placeholder="搜索文档、关键词…" aria-label="搜索文档" />
-      </div>
-
-      <nav aria-label="文档目录">
-        <div v-for="group in groups" :key="group.key" class="docs-group">
-          <div class="docs-group__label">{{ group.label }}</div>
-          <RouterLink
-            v-for="doc in group.docs"
-            :key="doc.slug"
-            :to="docPath(doc)"
-            class="docs-link"
-            :class="{ 'is-active': current?.slug === doc.slug && current?.section === doc.section }"
-          >
-            <span>{{ doc.title }}</span>
-          </RouterLink>
-        </div>
-        <div v-if="!groups.length" class="docs-empty">没有匹配的文档</div>
-      </nav>
-
-      <div class="docs-nav-foot">
-        <span class="mono">v0.1.0</span>
-        <span>文档随代码同步</span>
-      </div>
-    </aside>
-
     <article v-if="current" class="docs-article">
       <header class="docs-head">
+        <button class="docs-nav-toggle" type="button" @click="settings.toggleMobileNav()">
+          <Menu />
+          <span>目录</span>
+        </button>
         <div class="docs-crumb">
           <BookOpen />
           <span>文档</span>
@@ -234,134 +189,56 @@ onBeforeUnmount(() => {
 <style scoped>
 .docs-page {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) 210px;
-  gap: 0;
-  max-width: 1480px;
+  grid-template-columns: minmax(0, 1fr) 208px;
+  gap: 28px;
+  max-width: 1420px;
   margin: 0 auto;
-  padding: 0 24px 60px;
+  padding: 22px 26px 56px;
   align-items: start;
-}
-
-.docs-nav {
-  position: sticky;
-  top: 0;
-  max-height: calc(100vh - var(--header-h) - var(--status-h));
-  overflow-y: auto;
-  padding: 20px 16px 20px 0;
-  border-right: 1px solid var(--border-soft);
-}
-
-.docs-search {
-  position: relative;
-  margin-bottom: 14px;
-}
-
-.docs-search__icon {
-  position: absolute;
-  left: 9px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 13px;
-  height: 13px;
-  color: var(--text-3);
-  pointer-events: none;
-}
-
-.docs-search input {
-  width: 100%;
-  height: 30px;
-  padding: 0 9px 0 28px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
-  font-size: 11.5px;
-  outline: none;
-}
-
-.docs-search input:focus {
-  border-color: var(--accent);
-}
-
-.docs-search input::placeholder {
-  color: var(--text-3);
-}
-
-.docs-group + .docs-group {
-  margin-top: 16px;
-}
-
-.docs-group__label {
-  padding: 0 4px 5px;
-  font-size: 9px;
-  font-weight: 650;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--text-3);
-}
-
-.docs-link {
-  display: block;
-  padding: 5px 8px;
-  border-radius: 5px;
-  font-size: 11.5px;
-  color: var(--text-2);
-  text-decoration: none;
-  line-height: 1.45;
-}
-
-.docs-link:hover {
-  background: var(--surface-2);
-  color: var(--text);
-  text-decoration: none;
-}
-
-.docs-link.is-active {
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.docs-empty {
-  font-size: 11px;
-  color: var(--text-3);
-  padding: 8px 4px;
-}
-
-.docs-nav-foot {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 22px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-soft);
-  font-size: 9px;
-  color: var(--text-3);
 }
 
 .docs-article {
   min-width: 0;
-  padding: 26px 40px 40px;
 }
 
 .docs-head {
-  padding-bottom: 20px;
+  position: relative;
+  padding: 0 0 20px;
   margin-bottom: 22px;
   border-bottom: 1px solid var(--border-soft);
+}
+
+.docs-head::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--module-docs);
+}
+
+.docs-head {
+  padding-left: 14px;
 }
 
 .docs-crumb {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-3);
-  margin-bottom: 8px;
+  margin-bottom: 9px;
 }
 
 .docs-crumb svg {
   width: 12px;
   height: 12px;
+  color: var(--module-docs);
 }
 
 .crumb-sep {
@@ -369,7 +246,7 @@ onBeforeUnmount(() => {
 }
 
 .docs-head h1 {
-  font-size: 28px;
+  font-size: 27px;
   font-weight: 750;
   letter-spacing: -0.03em;
   color: var(--text);
@@ -377,15 +254,38 @@ onBeforeUnmount(() => {
 
 .docs-head p {
   margin-top: 5px;
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-2);
 }
 
 .docs-meta {
   display: flex;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 11px;
   flex-wrap: wrap;
+}
+
+.docs-nav-toggle {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.docs-nav-toggle svg {
+  width: 13px;
+  height: 13px;
 }
 
 .docs-loading {
@@ -395,7 +295,7 @@ onBeforeUnmount(() => {
 }
 
 .docs-prose {
-  max-width: 860px;
+  max-width: 880px;
 }
 
 .docs-foot {
@@ -413,11 +313,13 @@ onBeforeUnmount(() => {
   gap: 8px;
   max-width: 46%;
   padding: 8px 10px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-soft);
   color: var(--text-2);
   text-decoration: none;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color var(--duration) var(--ease),
+    background var(--duration) var(--ease);
 }
 
 .docs-foot__link:hover {
@@ -461,15 +363,17 @@ onBeforeUnmount(() => {
 
 .docs-toc {
   position: sticky;
-  top: 0;
-  max-height: calc(100vh - var(--header-h) - var(--status-h));
+  top: 10px;
+  max-height: calc(100vh - var(--header-h) - var(--status-h) - 24px);
   overflow-y: auto;
-  padding: 26px 0 20px 18px;
+  padding: 2px 0 20px 16px;
   border-left: 1px solid var(--border-soft);
+  scrollbar-width: thin;
 }
 
 .docs-toc__label {
   font-size: 9px;
+  font-weight: 650;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -479,16 +383,16 @@ onBeforeUnmount(() => {
 .docs-toc__item {
   display: block;
   width: 100%;
-  padding: 3px 0;
+  padding: 3px 0 3px 8px;
   border: none;
+  border-left: 2px solid transparent;
   background: transparent;
   text-align: left;
   color: var(--text-3);
+  font-family: inherit;
   font-size: 10.5px;
   line-height: 1.45;
   cursor: pointer;
-  border-left: 2px solid transparent;
-  padding-left: 8px;
 }
 
 .docs-toc__item:hover {
@@ -507,7 +411,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 1200px) {
   .docs-page {
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .docs-toc {
@@ -517,25 +421,23 @@ onBeforeUnmount(() => {
 
 @media (max-width: 900px) {
   .docs-page {
-    grid-template-columns: 1fr;
-    padding: 0 16px 40px;
+    padding: 16px 14px 40px;
   }
 
-  .docs-nav {
-    position: static;
-    max-height: 240px;
-    overflow-y: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--border-soft);
-    padding: 14px 0;
-  }
-
-  .docs-article {
-    padding: 20px 0 30px;
+  .docs-nav-toggle {
+    display: inline-flex;
   }
 
   .docs-head h1 {
-    font-size: 23px;
+    font-size: 22px;
+  }
+
+  .docs-prose {
+    max-width: none;
+  }
+
+  .docs-foot__link {
+    max-width: 48%;
   }
 }
 </style>

@@ -35,7 +35,7 @@ export const DOCS: DocEntry[] = [
     section: 'userguide',
     slug: 'interface',
     title: '界面与工作流',
-    description: '导航、三栏工作台、状态栏与快捷键',
+    description: '顶栏模块、侧栏导航、三栏工作台与快捷键',
     file: 'userguide/interface.md',
     order: 2,
     keywords: ['界面', '导航', '布局'],

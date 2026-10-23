@@ -1,38 +1,164 @@
+/* ============================================================
+   CrystalToolBox · design tokens
+   Light-blue / white shell, with a matching deep-blue dark theme.
+   The visual rhythm follows the BoMIND shell: a saturated top bar,
+   a quiet panel sidebar, and a white content sheet.
+   ============================================================ */
+
 :root {
   --font-sans:
-    'Inter', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    'PingFang SC', 'Microsoft YaHei', sans-serif;
+    'Inter', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
   --font-mono: ui-monospace, 'JetBrains Mono', 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
-  --radius: 10px;
-  --radius-sm: 7px;
-  --radius-xs: 5px;
-  --sidebar-w: 232px;
-  --sidebar-w-collapsed: 64px;
-  --header-h: 54px;
+
+  /* geometry */
+  --topbar-h: 58px;
+  --header-h: var(--topbar-h);
   --status-h: 26px;
+  --sidebar-w: 250px;
+  --sidebar-w-collapsed: 64px;
   --content-max: 1680px;
+  --shell-gap: 10px;
+
+  --radius: 9px;
+  --radius-sm: 6px;
+  --radius-xs: 4px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* type scale */
+  --fs-xs: 10px;
+  --fs-sm: 11px;
+  --fs-base: 12px;
+  --fs-md: 13px;
+  --fs-lg: 15px;
+  --fs-xl: 19px;
+  --fs-2xl: 24px;
+
+  /* timings */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration: 0.16s;
 }
 
+/* ------------------------------------------------------------ light */
+
 :root,
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #edf4fb;
+  --bg-soft: #f4f9fe;
+  --surface: #ffffff;
+  --surface-2: #f4f8fd;
+  --surface-3: #e9f2fb;
+  --surface-hover: #eef6fe;
+
+  --border: #d8e5f2;
+  --border-soft: #e7f0fa;
+  --border-strong: #b6cee5;
+
+  --text: #102a43;
+  --text-2: #4a6580;
+  --text-3: #7b91a8;
+
+  --accent: #2f7fc1;
+  --accent-strong: #1f66a3;
+  --accent-2: #47a8d8;
+  --accent-soft: rgba(47, 127, 193, 0.095);
+  --accent-line: rgba(47, 127, 193, 0.32);
+
+  --ok: #1f8a5f;
+  --ok-soft: rgba(31, 138, 95, 0.1);
+  --warn: #b7791f;
+  --warn-soft: rgba(183, 121, 31, 0.11);
+  --danger: #c94a5a;
+  --danger-soft: rgba(201, 74, 90, 0.09);
+  --info: #2f7fc1;
+
+  /* module colours */
+  --module-data: #2f7fc1;
+  --module-diffraction: #2a9d8f;
+  --module-crystal: #5a6fc4;
+  --module-docs: #3f8fb7;
+  --module-about: #6a7d92;
+
+  /* chart palette */
+  --plot-1: #2f7fc1;
+  --plot-2: #d08a2e;
+  --plot-3: #6f5bd4;
+  --plot-4: #d04f6e;
+  --plot-5: #2f9e7e;
+  --plot-6: #4aa8e0;
+  --grid-line: rgba(25, 75, 120, 0.07);
+  --grid-line-strong: rgba(25, 75, 120, 0.14);
+  --chart-bg: #ffffff;
+
+  /* shadows */
+  --shadow-sm: 0 1px 2px rgba(21, 62, 99, 0.06);
+  --shadow-card: 0 2px 10px rgba(21, 62, 99, 0.055);
+  --shadow: 0 14px 36px rgba(21, 62, 99, 0.13);
+  --glow: 0 0 0 1px rgba(47, 127, 193, 0.22), 0 0 26px rgba(47, 127, 193, 0.07);
+
+  --code-bg: #f2f7fd;
+
+  /* top navbar */
+  --nav-bg-start: #174f7f;
+  --nav-bg-end: #2b7fbe;
+  --nav-divider: #7fc4ef;
+  --nav-text: #f3f9ff;
+  --nav-muted: rgba(240, 249, 255, 0.68);
+  --nav-control-bg: rgba(255, 255, 255, 0.12);
+  --nav-control-border: rgba(255, 255, 255, 0.26);
+  --nav-control-hover: rgba(255, 255, 255, 0.2);
+  --nav-active-bg: #ffffff;
+  --nav-active-text: #17527f;
+  --nav-brand-sub: rgba(232, 246, 255, 0.72);
+
+  /* sidebar */
+  --sidebar-bg: #f8fbff;
+  --sidebar-header-start: #e4f1fd;
+  --sidebar-header-end: #f5faff;
+  --sidebar-header-text: #174f7f;
+  --sidebar-item-text: #48637f;
+  --sidebar-item-hover: #edf5fd;
+  --sidebar-item-active: #e3f0fc;
+  --sidebar-item-active-text: #174f7f;
+
+  /* status bar */
+  --status-bg: #102a43;
+  --status-text: rgba(226, 240, 252, 0.68);
+  --status-strong: #bfe0fb;
+
+  --overlay: rgba(12, 34, 56, 0.42);
+  --selection: rgba(47, 127, 193, 0.22);
+}
+
+/* ------------------------------------------------------------ dark */
+
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #070b14;
-  --bg-soft: #0a101d;
-  --surface: #0e1626;
-  --surface-2: #121d31;
-  --surface-3: #18253d;
-  --surface-hover: #17243a;
-  --border: #1d2b45;
-  --border-soft: #172338;
-  --border-strong: #2a3d5e;
-  --text: #e8eef9;
-  --text-2: #a3b4cd;
-  --text-3: #6c819f;
-  --accent: #22d3ee;
-  --accent-strong: #06b6d4;
-  --accent-2: #818cf8;
-  --accent-soft: rgba(34, 211, 238, 0.1);
-  --accent-line: rgba(34, 211, 238, 0.38);
+
+  --bg: #07121d;
+  --bg-soft: #0a1826;
+  --surface: #0e1e2e;
+  --surface-2: #132538;
+  --surface-3: #193048;
+  --surface-hover: #16293d;
+
+  --border: #213b54;
+  --border-soft: #182f45;
+  --border-strong: #2e4f6e;
+
+  --text: #e7f0f9;
+  --text-2: #a5bcd2;
+  --text-3: #708aa2;
+
+  --accent: #5aa9e6;
+  --accent-strong: #7cc4ff;
+  --accent-2: #38bdf8;
+  --accent-soft: rgba(90, 169, 230, 0.13);
+  --accent-line: rgba(90, 169, 230, 0.4);
+
   --ok: #34d399;
   --ok-soft: rgba(52, 211, 153, 0.12);
   --warn: #fbbf24;
@@ -40,56 +166,55 @@
   --danger: #fb7185;
   --danger-soft: rgba(251, 113, 133, 0.12);
   --info: #60a5fa;
-  --plot-1: #22d3ee;
-  --plot-2: #fbbf24;
+
+  --module-data: #5aa9e6;
+  --module-diffraction: #4fd1c5;
+  --module-crystal: #9aa8f5;
+  --module-docs: #7cc4ff;
+  --module-about: #9fb2c6;
+
+  --plot-1: #5aa9e6;
+  --plot-2: #f0b45c;
   --plot-3: #a78bfa;
   --plot-4: #fb7185;
   --plot-5: #34d399;
-  --plot-6: #60a5fa;
+  --plot-6: #7dd3fc;
   --grid-line: rgba(148, 181, 224, 0.09);
-  --grid-line-strong: rgba(148, 181, 224, 0.16);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
-  --shadow: 0 14px 40px rgba(0, 0, 0, 0.38);
-  --glow: 0 0 0 1px rgba(34, 211, 238, 0.25), 0 0 28px rgba(34, 211, 238, 0.08);
-  --code-bg: #0a1220;
-}
+  --grid-line-strong: rgba(148, 181, 224, 0.17);
+  --chart-bg: #0e1e2e;
 
-:root[data-theme='light'] {
-  color-scheme: light;
-  --bg: #f4f7fc;
-  --bg-soft: #eef3fb;
-  --surface: #ffffff;
-  --surface-2: #f7f9fd;
-  --surface-3: #eef3fb;
-  --surface-hover: #eef4fd;
-  --border: #dde5f1;
-  --border-soft: #e8eef7;
-  --border-strong: #c6d3e6;
-  --text: #0b1526;
-  --text-2: #4c5f7a;
-  --text-3: #7b8ca6;
-  --accent: #0891b2;
-  --accent-strong: #0e7490;
-  --accent-2: #4f46e5;
-  --accent-soft: rgba(8, 145, 178, 0.08);
-  --accent-line: rgba(8, 145, 178, 0.35);
-  --ok: #059669;
-  --ok-soft: rgba(5, 150, 105, 0.1);
-  --warn: #b45309;
-  --warn-soft: rgba(180, 83, 9, 0.1);
-  --danger: #e11d48;
-  --danger-soft: rgba(225, 29, 72, 0.09);
-  --info: #2563eb;
-  --plot-1: #0891b2;
-  --plot-2: #d97706;
-  --plot-3: #7c3aed;
-  --plot-4: #e11d48;
-  --plot-5: #059669;
-  --plot-6: #2563eb;
-  --grid-line: rgba(30, 64, 120, 0.08);
-  --grid-line-strong: rgba(30, 64, 120, 0.16);
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow: 0 14px 40px rgba(15, 23, 42, 0.1);
-  --glow: 0 0 0 1px rgba(8, 145, 178, 0.2), 0 0 28px rgba(8, 145, 178, 0.06);
-  --code-bg: #f1f5fb;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.26);
+  --shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+  --glow: 0 0 0 1px rgba(90, 169, 230, 0.28), 0 0 28px rgba(90, 169, 230, 0.1);
+
+  --code-bg: #0a1826;
+
+  --nav-bg-start: #06182a;
+  --nav-bg-end: #0e3557;
+  --nav-divider: #2b7fb8;
+  --nav-text: #eef7ff;
+  --nav-muted: rgba(214, 235, 252, 0.62);
+  --nav-control-bg: rgba(255, 255, 255, 0.07);
+  --nav-control-border: rgba(255, 255, 255, 0.18);
+  --nav-control-hover: rgba(255, 255, 255, 0.13);
+  --nav-active-bg: #5aa9e6;
+  --nav-active-text: #041422;
+  --nav-brand-sub: rgba(190, 222, 248, 0.66);
+
+  --sidebar-bg: #0b1a29;
+  --sidebar-header-start: #0d2438;
+  --sidebar-header-end: #0b1a29;
+  --sidebar-header-text: #cfe7fb;
+  --sidebar-item-text: #a5bcd2;
+  --sidebar-item-hover: #132538;
+  --sidebar-item-active: #14324b;
+  --sidebar-item-active-text: #eaf5ff;
+
+  --status-bg: #050f18;
+  --status-text: rgba(190, 214, 235, 0.62);
+  --status-strong: #9fd4f7;
+
+  --overlay: rgba(2, 10, 18, 0.62);
+  --selection: rgba(90, 169, 230, 0.3);
 }

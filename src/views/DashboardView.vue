@@ -1,16 +1,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import {
-  ArrowRight,
-  BookOpen,
-  FlaskConical,
-  LineChart,
-  Sparkles,
-  Table2,
-  Upload,
-} from 'lucide-vue-next'
-import { tools } from '@/tools/registry'
+import { ArrowRight, BookOpen, FlaskConical, LineChart, Sparkles, Table2, Upload } from 'lucide-vue-next'
+import { NAV_MODULES } from '@/config/navigation'
 import { loadSample, type SampleId } from '@/data/samples'
 import { useProjectStore } from '@/stores/project'
 import MathText from '@/components/common/MathText.vue'
@@ -18,9 +10,11 @@ import MathText from '@/components/common/MathText.vue'
 const router = useRouter()
 const project = useProjectStore()
 
+const featureModules = NAV_MODULES.filter((module) => ['data', 'diffraction', 'crystal', 'docs'].includes(module.key))
+
 const heroStats = [
-  { value: '7', label: '个工具模块' },
-  { value: '3', label: '类数据工作流' },
+  { value: '7', label: '个工具页面' },
+  { value: '3', label: '个计算模块' },
   { value: '100%', label: '浏览器本地计算' },
 ]
 
@@ -61,8 +55,7 @@ async function openSample(id: SampleId) {
           变成随手可用的工具。
         </h1>
         <p class="hero__sub">
-          从原始谱图到 Jade 拟合，从倒易空间到带轴电子衍射。所有解析与计算都在浏览器中完成，
-          数据不离开你的电脑。
+          从原始谱图到 Jade 拟合，从倒易空间到带轴电子衍射。所有解析与计算都在浏览器中完成， 数据不离开你的电脑。
         </p>
         <div class="hero__actions">
           <el-button type="primary" @click="router.push('/data/import')">
@@ -84,21 +77,21 @@ async function openSample(id: SampleId) {
         <svg viewBox="0 0 320 300" class="lattice">
           <defs>
             <linearGradient id="hero-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop stop-color="#22d3ee" />
-              <stop offset="1" stop-color="#6366f1" />
+              <stop offset="0" style="stop-color: var(--accent)" />
+              <stop offset="1" style="stop-color: var(--accent-2)" />
             </linearGradient>
             <radialGradient id="hero-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="0" stop-color="#22d3ee" stop-opacity="0.24" />
-              <stop offset="1" stop-color="#22d3ee" stop-opacity="0" />
+              <stop offset="0" style="stop-color: var(--accent); stop-opacity: 0.18" />
+              <stop offset="1" style="stop-color: var(--accent); stop-opacity: 0" />
             </radialGradient>
           </defs>
           <circle cx="160" cy="150" r="130" fill="url(#hero-glow)" />
-          <g opacity="0.55" stroke="url(#hero-grad)" stroke-width="0.6" fill="none">
+          <g class="lattice__lines" opacity="0.62">
             <path d="M40 150 L160 30 L280 150 L160 270 Z" />
-            <path d="M70 150 L160 60 L250 150 L160 240 Z" opacity="0.5" />
-            <path d="M100 150 L160 90 L220 150 L160 210 Z" opacity="0.35" />
+            <path d="M70 150 L160 60 L250 150 L160 240 Z" opacity="0.55" />
+            <path d="M100 150 L160 90 L220 150 L160 210 Z" opacity="0.4" />
           </g>
-          <g fill="#22d3ee">
+          <g class="lattice__nodes">
             <circle cx="160" cy="150" r="3.2" />
             <circle cx="160" cy="90" r="2.2" />
             <circle cx="220" cy="150" r="2.2" />
@@ -113,17 +106,19 @@ async function openSample(id: SampleId) {
             <circle cx="160" cy="270" r="2" opacity="0.85" />
             <circle cx="40" cy="150" r="2" opacity="0.85" />
           </g>
-          <g fill="#a5b4fc" opacity="0.8">
+          <g class="lattice__nodes lattice__nodes--soft">
             <circle cx="115" cy="105" r="1.4" />
             <circle cx="205" cy="105" r="1.4" />
             <circle cx="205" cy="195" r="1.4" />
             <circle cx="115" cy="195" r="1.4" />
           </g>
-          <text x="164" y="84" fill="#94a3b8" font-size="8" font-family="monospace">002</text>
-          <text x="226" y="147" fill="#94a3b8" font-size="8" font-family="monospace">200</text>
-          <text x="164" y="224" fill="#94a3b8" font-size="8" font-family="monospace">00-2</text>
-          <text x="66" y="147" fill="#94a3b8" font-size="8" font-family="monospace">-200</text>
-          <text x="151" y="160" fill="#e2e8f0" font-size="8" font-family="monospace">000</text>
+          <g class="lattice__labels">
+            <text x="164" y="84">002</text>
+            <text x="226" y="147">200</text>
+            <text x="164" y="224">00-2</text>
+            <text x="66" y="147">-200</text>
+            <text x="151" y="160">000</text>
+          </g>
         </svg>
         <div class="hero__visual-caption mono">[uvw] = [001] · ZOLZ</div>
       </div>
@@ -132,23 +127,43 @@ async function openSample(id: SampleId) {
     <section class="section">
       <div class="section__head">
         <div>
-          <span class="section-label">TOOLBOX</span>
-          <h2 class="section__title">七个工具，覆盖三条课程主线</h2>
+          <span class="section-label">MODULES</span>
+          <h2 class="section__title">三个计算模块，一个文档中心</h2>
         </div>
         <span class="chip chip--accent">纯前端 · 离线可用</span>
       </div>
-      <div class="tool-grid">
-        <RouterLink v-for="tool in tools" :key="tool.id" :to="tool.path" class="tool-card">
-          <span class="tool-card__icon"><component :is="tool.icon" /></span>
-          <span class="tool-card__body">
-            <span class="tool-card__title">
-              {{ tool.title }}
-              <span v-if="tool.status === 'beta'" class="chip chip--accent tiny">beta</span>
+      <div class="module-grid">
+        <article
+          v-for="module in featureModules"
+          :key="module.key"
+          class="module-card"
+          :style="{ '--card-accent': module.accent }"
+        >
+          <header class="module-card__head">
+            <span class="module-card__icon"><component :is="module.icon" /></span>
+            <span class="module-card__copy">
+              <b>{{ module.label }}</b>
+              <small>{{ module.description }}</small>
             </span>
-            <span class="tool-card__sub">{{ tool.subtitle }}</span>
-          </span>
-          <ArrowRight class="tool-card__arrow" />
-        </RouterLink>
+            <span class="module-card__count mono">{{ module.items.length }} 页</span>
+          </header>
+          <ul class="module-card__list">
+            <li v-for="item in module.items" :key="item.id">
+              <RouterLink :to="item.path">
+                <span class="module-card__item-icon"><component :is="item.icon" /></span>
+                <span class="module-card__item-label">{{ item.label }}</span>
+                <ArrowRight class="module-card__item-arrow" />
+              </RouterLink>
+            </li>
+          </ul>
+          <div v-if="module.highlights?.length && module.items.length < 4" class="module-card__tags">
+            <span v-for="tag in module.highlights" :key="tag">{{ tag }}</span>
+          </div>
+          <RouterLink :to="module.path" class="module-card__go">
+            进入{{ module.label }}
+            <ArrowRight />
+          </RouterLink>
+        </article>
       </div>
     </section>
 
@@ -158,9 +173,7 @@ async function openSample(id: SampleId) {
           <span class="section-label">WORKFLOW</span>
           <h2 class="section__title">一条配方，贯穿导入到 Origin</h2>
         </div>
-        <RouterLink to="/docs/cookbook/raman-to-jade" class="section__link">
-          查看完整示例 <ArrowRight />
-        </RouterLink>
+        <RouterLink to="/docs/cookbook/raman-to-jade" class="section__link"> 查看完整示例 <ArrowRight /> </RouterLink>
       </div>
       <div class="workflow-grid">
         <div v-for="item in workflow" :key="item.step" class="workflow-card">
@@ -205,6 +218,7 @@ async function openSample(id: SampleId) {
       <div class="panel">
         <div class="panel__head">
           <h2 class="panel__title"><BookOpen /> 文档入口</h2>
+          <RouterLink to="/docs/userguide/getting-started" class="panel__link">全部文档</RouterLink>
         </div>
         <div class="panel__body docs-list">
           <RouterLink to="/docs/userguide/getting-started" class="docs-item">
@@ -214,7 +228,7 @@ async function openSample(id: SampleId) {
           </RouterLink>
           <RouterLink to="/docs/cookbook/raman-to-jade" class="docs-item">
             <span class="docs-item__badge">实战</span>
-            <span><b>Raman → Jade → Origin</b><small>含可复现数据与逐步截图位</small></span>
+            <span><b>Raman → Jade → Origin</b><small>含可复现数据与逐步说明</small></span>
             <ArrowRight />
           </RouterLink>
           <RouterLink to="/docs/reference/file-formats" class="docs-item">
@@ -246,18 +260,21 @@ async function openSample(id: SampleId) {
   gap: 26px;
 }
 
+/* ------------------------------------------------------------- hero */
+
 .hero {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  grid-template-columns: minmax(0, 1.12fr) minmax(280px, 0.88fr);
   gap: 18px;
-  padding: 30px 32px;
-  border-radius: 14px;
+  padding: 32px 34px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background:
-    radial-gradient(700px 300px at 0% 0%, rgba(34, 211, 238, 0.08), transparent 65%),
-    radial-gradient(600px 320px at 100% 100%, rgba(99, 102, 241, 0.09), transparent 60%),
+    radial-gradient(760px 320px at 0% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 66%),
+    radial-gradient(620px 340px at 100% 100%, color-mix(in srgb, var(--accent-2) 10%, transparent), transparent 62%),
     linear-gradient(160deg, var(--surface), var(--bg-soft));
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
 
@@ -266,11 +283,12 @@ async function openSample(id: SampleId) {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 44px 44px;
-  mask-image: radial-gradient(600px 320px at 70% 40%, #000 0%, transparent 78%);
-  opacity: 0.6;
+  mask-image: radial-gradient(640px 340px at 72% 42%, #000 0%, transparent 78%);
+  opacity: 0.7;
 }
 
 .hero__content {
@@ -286,32 +304,33 @@ async function openSample(id: SampleId) {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  padding: 4px 9px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
   color: var(--accent);
 }
 
 .hero__eyebrow svg {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
 }
 
 .hero__title {
-  font-size: clamp(30px, 3.2vw, 44px);
-  line-height: 1.16;
+  font-size: clamp(29px, 3vw, 42px);
+  line-height: 1.17;
   font-weight: 780;
   letter-spacing: -0.035em;
-  background: linear-gradient(120deg, var(--text) 25%, color-mix(in srgb, var(--accent) 70%, var(--text)));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--text);
 }
 
 .hero__sub {
   max-width: 580px;
-  font-size: 13px;
-  line-height: 1.75;
+  font-size: 12.5px;
+  line-height: 1.8;
   color: var(--text-2);
 }
 
@@ -324,26 +343,27 @@ async function openSample(id: SampleId) {
 
 .hero__stats {
   display: flex;
-  gap: 26px;
+  gap: 28px;
   margin-top: 8px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border-soft);
+  padding-top: 15px;
+  border-top: 1px solid var(--border);
   width: 100%;
 }
 
 .hero__stat {
   display: flex;
   flex-direction: column;
+  gap: 1px;
 }
 
 .hero__stat-value {
-  font-size: 19px;
-  font-weight: 650;
-  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
 }
 
 .hero__stat-label {
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--text-3);
   letter-spacing: 0.04em;
 }
@@ -361,7 +381,28 @@ async function openSample(id: SampleId) {
   width: 100%;
   max-width: 340px;
   height: auto;
-  filter: drop-shadow(0 14px 40px rgba(34, 211, 238, 0.12));
+  filter: drop-shadow(0 14px 36px color-mix(in srgb, var(--accent) 16%, transparent));
+}
+
+.lattice__lines {
+  fill: none;
+  stroke: url(#hero-grad);
+  stroke-width: 0.7;
+}
+
+.lattice__nodes {
+  fill: var(--accent);
+}
+
+.lattice__nodes--soft {
+  fill: var(--accent-2);
+  opacity: 0.8;
+}
+
+.lattice__labels {
+  fill: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 8px;
 }
 
 .hero__visual-caption {
@@ -379,6 +420,8 @@ async function openSample(id: SampleId) {
   margin-right: 4px;
 }
 
+/* ------------------------------------------------------------- sections */
+
 .section {
   display: flex;
   flex-direction: column;
@@ -395,16 +438,17 @@ async function openSample(id: SampleId) {
 
 .section__title {
   font-size: 19px;
-  font-weight: 700;
+  font-weight: 720;
   letter-spacing: -0.02em;
   margin-top: 3px;
+  color: var(--text);
 }
 
 .section__link {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--text-2);
 }
 
@@ -418,87 +462,208 @@ async function openSample(id: SampleId) {
   height: 13px;
 }
 
-.tool-grid {
+/* ------------------------------------------------------------- module cards */
+
+.module-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.tool-card {
+.module-card {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 13px 14px;
-  border-radius: var(--radius);
+  flex-direction: column;
+  min-width: 0;
+  padding: 14px 14px 12px;
   border: 1px solid var(--border);
+  border-radius: var(--radius);
   background: var(--surface);
-  color: var(--text-2);
-  text-decoration: none;
-  transition: border-color 0.16s, background 0.16s, transform 0.16s, box-shadow 0.16s;
-}
-
-.tool-card:hover {
-  border-color: var(--accent-line);
-  background: var(--surface-2);
-  transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
-  text-decoration: none;
+  overflow: hidden;
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease),
+    transform var(--duration) var(--ease);
 }
 
-.tool-card__icon {
+.module-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--card-accent), color-mix(in srgb, var(--card-accent) 25%, transparent));
+}
+
+.module-card:hover {
+  border-color: color-mix(in srgb, var(--card-accent) 42%, var(--border));
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+.module-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 11px;
+}
+
+.module-card__icon {
   display: grid;
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: 8px;
-  background: var(--accent-soft);
-  color: var(--accent);
   flex: 0 0 auto;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--card-accent) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--card-accent) 24%, transparent);
+  color: var(--card-accent);
 }
 
-.tool-card__icon svg {
+.module-card__icon svg {
   width: 17px;
   height: 17px;
 }
 
-.tool-card__body {
+.module-card__copy {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1;
 }
 
-.tool-card__title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  font-weight: 650;
+.module-card__copy b {
+  font-size: 13px;
+  font-weight: 700;
   color: var(--text);
 }
 
-.tool-card__sub {
-  font-size: 10.5px;
+.module-card__copy small {
+  font-size: 9.5px;
+  line-height: 1.5;
   color: var(--text-3);
+}
+
+.module-card__count {
+  flex: 0 0 auto;
+  font-size: 9px;
+  color: var(--text-3);
+}
+
+.module-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+  border-top: 1px solid var(--border-soft);
+  flex: 1;
+}
+
+.module-card__list li + li {
+  margin-top: 1px;
+}
+
+.module-card__list a {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 6px;
+  border-radius: var(--radius-xs);
+  color: var(--text-2);
+  font-size: 11px;
+  text-decoration: none;
+  transition:
+    background var(--duration) var(--ease),
+    color var(--duration) var(--ease);
+}
+
+.module-card__list a:hover {
+  background: color-mix(in srgb, var(--card-accent) 8%, var(--surface));
+  color: var(--card-accent);
+  text-decoration: none;
+}
+
+.module-card__item-icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: var(--card-accent);
+  opacity: 0.85;
+}
+
+.module-card__item-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.module-card__item-label {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.tool-card__arrow {
-  width: 14px;
-  height: 14px;
-  margin-left: auto;
-  color: var(--text-3);
+.module-card__item-arrow {
+  width: 11px;
+  height: 11px;
   opacity: 0;
-  transition: opacity 0.16s, transform 0.16s;
+  transition:
+    opacity var(--duration) var(--ease),
+    transform var(--duration) var(--ease);
 }
 
-.tool-card:hover .tool-card__arrow {
+.module-card__list a:hover .module-card__item-arrow {
   opacity: 1;
   transform: translateX(2px);
-  color: var(--accent);
 }
+
+.module-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 10px 0 2px;
+}
+
+.module-card__tags span {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 8.5px;
+  white-space: nowrap;
+}
+
+.module-card__go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, var(--card-accent) 26%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--card-accent) 7%, var(--surface));
+  color: var(--card-accent);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.module-card__go:hover {
+  background: color-mix(in srgb, var(--card-accent) 13%, var(--surface));
+  text-decoration: none;
+}
+
+.module-card__go svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ------------------------------------------------------------- workflow */
 
 .workflow-section {
   gap: 12px;
@@ -519,50 +684,42 @@ async function openSample(id: SampleId) {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
-  overflow: hidden;
-}
-
-.workflow-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  box-shadow: var(--shadow-sm);
 }
 
 .workflow-card__step {
-  font-size: 9.5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   color: var(--accent);
-  letter-spacing: 0.06em;
 }
 
 .workflow-card__title {
-  font-size: 12.5px;
-  font-weight: 650;
+  font-size: 12px;
+  font-weight: 680;
   color: var(--text);
 }
 
 .workflow-card__desc {
-  font-size: 10.5px;
+  font-size: 10px;
+  line-height: 1.55;
   color: var(--text-3);
-  line-height: 1.5;
 }
 
 .formula-strip {
   display: flex;
   align-items: center;
-  gap: 18px;
   flex-wrap: wrap;
-  padding: 11px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-soft);
+  gap: 18px;
+  padding: 12px 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   background: var(--surface-2);
 }
 
 .formula-strip__label {
-  font-size: 9.5px;
+  font-size: 9px;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -572,67 +729,80 @@ async function openSample(id: SampleId) {
   display: flex;
   align-items: center;
   gap: 7px;
+  font-size: 10.5px;
   color: var(--text-2);
 }
 
 .formula-strip__name {
-  font-size: 10px;
+  font-weight: 650;
   color: var(--text-3);
 }
 
+/* ------------------------------------------------------------- two column */
+
 .two-col {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
-  align-items: start;
+}
+
+.panel__link {
+  font-size: 10.5px;
+  color: var(--accent);
 }
 
 .quick-grid {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 .quick-card {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 10px;
+  padding: 10px 11px;
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-soft);
   background: var(--surface-2);
   color: var(--text-2);
+  font-family: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color var(--duration) var(--ease),
+    background var(--duration) var(--ease),
+    transform var(--duration) var(--ease);
 }
 
 .quick-card:hover {
   border-color: var(--accent-line);
   background: var(--accent-soft);
+  transform: translateX(2px);
 }
 
 .quick-card > svg {
-  width: 16px;
-  height: 16px;
-  color: var(--accent);
+  width: 17px;
+  height: 17px;
   flex: 0 0 auto;
+  color: var(--accent);
 }
 
 .quick-card span {
   display: flex;
   flex-direction: column;
-  line-height: 1.4;
+  gap: 1px;
+  min-width: 0;
 }
 
 .quick-card b {
   font-size: 11.5px;
+  font-weight: 650;
   color: var(--text);
-  font-weight: 600;
 }
 
 .quick-card small {
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--text-3);
 }
 
@@ -646,11 +816,11 @@ async function openSample(id: SampleId) {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 8px 9px;
-  border-radius: 6px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-2);
   text-decoration: none;
-  transition: background 0.15s;
+  transition: background var(--duration) var(--ease);
 }
 
 .docs-item:hover {
@@ -661,63 +831,74 @@ async function openSample(id: SampleId) {
 .docs-item__badge {
   display: grid;
   place-items: center;
-  width: 30px;
+  flex: 0 0 34px;
   height: 24px;
-  border-radius: 5px;
-  background: var(--surface-3);
-  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  color: var(--accent);
   font-size: 9px;
-  color: var(--text-3);
-  flex: 0 0 auto;
+  font-weight: 650;
 }
 
-.docs-item span:nth-child(2) {
+.docs-item > span:nth-child(2) {
   display: flex;
   flex-direction: column;
-  line-height: 1.4;
+  gap: 1px;
   min-width: 0;
+  flex: 1;
 }
 
 .docs-item b {
   font-size: 11.5px;
+  font-weight: 650;
   color: var(--text);
-  font-weight: 600;
 }
 
 .docs-item small {
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--text-3);
 }
 
 .docs-item > svg {
-  width: 13px;
-  height: 13px;
-  margin-left: auto;
+  width: 12px;
+  height: 12px;
   color: var(--text-3);
 }
 
 .dash-foot {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding-top: 8px;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 6px;
   border-top: 1px solid var(--border-soft);
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-3);
 }
 
 .dash-foot a {
-  margin-left: auto;
+  color: var(--text-2);
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1380px) {
+  .module-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1080px) {
   .hero {
-    grid-template-columns: 1fr;
-    padding: 24px;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 26px 24px;
   }
 
   .hero__visual {
-    display: none;
+    min-height: 210px;
+  }
+
+  .lattice {
+    max-width: 280px;
   }
 
   .workflow-grid {
@@ -725,21 +906,43 @@ async function openSample(id: SampleId) {
   }
 
   .two-col {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 640px) {
-  .hero__stats {
-    gap: 18px;
+  .hero {
+    padding: 22px 18px;
+  }
+
+  .hero__eyebrow {
+    font-size: 8px;
+    letter-spacing: 0.08em;
+  }
+
+  .hero__visual {
+    min-height: 0;
+    margin-top: 2px;
+  }
+
+  .lattice {
+    max-width: 210px;
+  }
+
+  .module-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .workflow-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .formula-strip {
-    gap: 10px;
+  .hero__stats {
+    gap: 20px;
+  }
+
+  .dash-foot {
+    flex-wrap: wrap;
   }
 }
 </style>

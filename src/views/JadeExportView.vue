@@ -42,7 +42,7 @@ const mappedSeries = computed<ChartSeries[]>(() => {
       label: 'Jade 输入',
       x: project.derived.x,
       y: project.derived.y,
-      color: '#22d3ee',
+      color: '#3b9fdd',
       width: 1.5,
       fill: true,
     },
@@ -177,9 +177,7 @@ async function copyPreview() {
     <template #config>
       <PanelCard title="Jade 坐标映射" :icon="Wand2">
         <div v-if="!jadeStep" class="mapping-empty">
-          <p class="small muted">
-            尚未添加映射步骤。Jade 要求 0 ≤ X ≤ 140 且 Y &gt; 0；非衍射数据必须先映射。
-          </p>
+          <p class="small muted">尚未添加映射步骤。Jade 要求 0 ≤ X ≤ 140 且 Y &gt; 0；非衍射数据必须先映射。</p>
           <el-button type="primary" size="small" style="width: 100%; margin-top: 8px" @click="addJadeStep">
             添加 Jade 映射步骤
           </el-button>
@@ -223,14 +221,10 @@ async function copyPreview() {
             </div>
           </template>
           <template v-else-if="mode === 'nonDiffraction'">
-            <div class="small dim" style="line-height: 1.55">
-              固定映射：X → [0, 100]，Y → [0.5, 10000]。
-            </div>
+            <div class="small dim" style="line-height: 1.55">固定映射：X → [0, 100]，Y → [0.5, 10000]。</div>
           </template>
           <template v-else-if="mode === 'safe'">
-            <div class="small dim" style="line-height: 1.55">
-              固定映射：X → [1, 139]，Y → [0.5, 10000]。
-            </div>
+            <div class="small dim" style="line-height: 1.55">固定映射：X → [1, 139]，Y → [0.5, 10000]。</div>
           </template>
           <template v-else>
             <div class="small dim" style="line-height: 1.55">
@@ -248,11 +242,15 @@ async function copyPreview() {
 
           <div v-if="mapping" class="mapping-box">
             <div class="section-label" style="margin-bottom: 6px">解析出的系数</div>
-            <div class="mono mapping-box__line">x' = {{ mapping.xScale.toPrecision(10) }} · x {{ signed(mapping.xOffset) }}</div>
-            <div class="mono mapping-box__line">y' = {{ mapping.yScale.toPrecision(10) }} · y {{ signed(mapping.yOffset) }}</div>
+            <div class="mono mapping-box__line">
+              x' = {{ mapping.xScale.toPrecision(10) }} · x {{ signed(mapping.xOffset) }}
+            </div>
+            <div class="mono mapping-box__line">
+              y' = {{ mapping.yScale.toPrecision(10) }} · y {{ signed(mapping.yOffset) }}
+            </div>
             <div class="mapping-box__range mono">
-              X: {{ mapping.outputX[0].toPrecision(6) }} → {{ mapping.outputX[1].toPrecision(6) }} ·
-              Y: {{ mapping.outputY[0].toPrecision(6) }} → {{ mapping.outputY[1].toPrecision(6) }}
+              X: {{ mapping.outputX[0].toPrecision(6) }} → {{ mapping.outputX[1].toPrecision(6) }} · Y:
+              {{ mapping.outputY[0].toPrecision(6) }} → {{ mapping.outputY[1].toPrecision(6) }}
             </div>
           </div>
           <div v-for="warning in mapping?.warnings ?? []" :key="warning" class="issue issue--warning">

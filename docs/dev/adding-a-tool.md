@@ -19,12 +19,7 @@ const sum = computed(() => a.value + b.value)
 </script>
 
 <template>
-  <ToolPage
-    title="我的工具"
-    subtitle="一句话说明它解决什么问题"
-    eyebrow="晶体学计算 · 05"
-    doc="/docs/userguide/my-tool"
-  >
+  <ToolPage title="我的工具" subtitle="一句话说明它解决什么问题" eyebrow="晶体几何 · 03" doc="/docs/userguide/my-tool">
     <template #config>
       <PanelCard title="参数">
         <div class="form-stack">
@@ -82,10 +77,14 @@ export const tools: ToolMeta[] = [
 
 注册后自动获得：
 
-- 侧边栏入口；
 - 路由；
-- 工作台卡片；
-- 面包屑与文档按钮。
+- 顶栏模块标签下的侧栏入口；
+- 首页对应模块的页面卡片；
+- 全局搜索（`Ctrl / ⌘ + K`）索引；
+- 工具页右上角的文档按钮。
+
+模块由 `group` 决定：`data` → 数据处理，`diffraction` → 衍射模拟，
+`crystal` → 晶体几何。侧栏与首页会按工具在 `tools` 数组中的顺序自动编号。
 
 ## 3. 写文档
 
@@ -132,7 +131,7 @@ describe('myComputation', () => {
 - [ ] `npm run type-check` 通过；
 - [ ] `npm run test:unit` 通过；
 - [ ] `npm run build` 通过；
-- [ ] 侧栏/面包屑/工作台卡片出现新工具；
+- [ ] 侧栏、顶栏模块标签与首页模块卡片出现新工具；
 - [ ] 文档链接可用，标题不重复；
 - [ ] 空状态、错误状态、移动端布局都有处理；
 - [ ] 导出/下载有成功与失败提示；
