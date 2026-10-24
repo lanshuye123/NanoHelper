@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Camera, Download, Gauge, Grid3x3, ImageDown, ScanLine, Sparkles, Table2 } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
+import type { DrawerState } from '@/components/tool/types'
 import PanelCard from '@/components/common/PanelCard.vue'
 import NumberField from '@/components/common/NumberField.vue'
 import DiffractionCanvas, { type DiffractionPoint } from '@/components/chart/DiffractionCanvas.vue'
@@ -162,21 +163,59 @@ onMounted(() => {
     }
   }
 })
+const spotText = computed(() => {
+  const pattern = result.value.pattern
+  if (!pattern) return ''
+  const head = `${'hkl'.padEnd(12)}${'d(Å)'.padStart(10)}${'|g|(Å⁻¹)'.padStart(12)}${'I(%)'.padStart(8)}${'R(mm)'.padStart(9)}`
+  const rows = spotTable.value.map((spot) =>
+    [
+      formatHkl(spot.hkl, 'round').padEnd(12),
+      spot.d.toFixed(5).padStart(10),
+      spot.g.toFixed(5).padStart(12),
+      spot.intensityRel.toFixed(1).padStart(8),
+      Math.hypot(spot.rx, spot.ry).toFixed(3).padStart(9),
+    ].join(''),
+  )
+  return [head, ...rows].join('\n')
+})
+
+async function copySpots() {
+  try {
+    await navigator.clipboard.writeText(spotText.value)
+    ElMessage.success('已复制斑点表')
+  } catch {
+    ElMessage.error('浏览器拒绝访问剪贴板')
+  }
+}
+
+const drawer = ref<DrawerState>('closed')
 </script>
 
 <template>
   <ToolPage
-    title="带轴电子衍射模拟"
+    tool-id="saed"
+    title="SAED 模拟"
     subtitle="选择晶体结构与带轴，计算 ZOLZ 斑点位置、结构因子强度与指数标注，并可直接导出图片或表格。"
-    eyebrow="衍射模拟 · 01"
     doc="/docs/userguide/saed"
+    eyebrow="衍射模拟 · 01"
+    v-model:result-state="drawer"
+    result-title="衍射斑点"
   >
-    <template #actions>
-      <el-button size="small" :disabled="!pattern" @click="exportPng"> <ImageDown class="btn-icon" /> PNG </el-button>
-      <el-button size="small" :disabled="!pattern" @click="exportCsv"> <Download class="btn-icon" /> CSV </el-button>
+    <template #run>
+      <button
+        type="button"
+        class="btn btn--primary btn--lg"
+        :disabled="!pattern"
+        :aria-busy="!structureStore.current"
+        @click="drawer = 'half'"
+      >
+        查看衍射结果
+      </button>
+      <button type="button" class="btn" :disabled="!pattern" @click="exportPng">PNG</button>
+      <button type="button" class="btn" :disabled="!pattern" @click="exportCsv">CSV</button>
     </template>
 
-    <template #config>
+    <template #params>
       <PanelCard title="晶体结构" :icon="Grid3x3">
         <StructurePicker />
       </PanelCard>
@@ -307,73 +346,51 @@ onMounted(() => {
       </PanelCard>
     </template>
 
-    <div v-if="result.error" class="issue issue--error">
-      <span class="issue__icon" />
-      <div>{{ result.error }}</div>
-    </div>
+    <p v-if="result.error" class="field-error" aria-live="polite">{{ result.error }}</p>
 
-    <template v-if="pattern">
-      <div class="saed-stats">
-        <div v-for="item in stats" :key="item.label" class="stat">
-          <div class="stat__label">{{ item.label }}</div>
-          <div class="stat__value">
-            {{ item.value }}<span class="stat__unit">{{ item.unit }}</span>
-          </div>
+    <template #chart>
+      <DiffractionCanvas
+        v-if="pattern"
+        ref="canvasRef"
+        :points="points"
+        :max-r="maxR"
+        :unit="displayUnit === 'mm' ? 'mm' : 'Å⁻¹'"
+        :show-labels="showLabels"
+        :height="420"
+        :caption="`${formatZone(pattern.zone)} · ${voltageKv} kV · L = ${cameraLengthMm} mm`"
+        @select="onCanvasSelect"
+      />
+    </template>
+
+    <template #text>
+      <pre v-if="pattern" class="code-surface"><code>{{ spotText }}</code></pre>
+      <p v-else class="section-note">调整参数后即可生成衍射斑点。</p>
+      <div v-if="pattern?.warnings.length">
+        <div v-for="warning in pattern.warnings" :key="warning" class="issue issue--warning">
+          <div>{{ warning }}</div>
         </div>
       </div>
+    </template>
 
-      <PanelCard
-        title="衍射图"
-        :icon="ScanLine"
-        :hint="`${formatZone(pattern.zone)} · ${voltageKv} kV · L = ${cameraLengthMm} mm`"
-      >
-        <DiffractionCanvas
-          ref="canvasRef"
-          :points="points"
-          :max-r="maxR"
-          :unit="displayUnit === 'mm' ? 'mm' : 'Å⁻¹'"
-          :show-labels="showLabels"
-          :height="480"
-          :caption="`ZOLZ · ${displayUnit === 'mm' ? 'R = Lλ|g|' : 'g 空间'}`"
-          @select="onCanvasSelect"
-        />
-        <div v-if="pattern.warnings.length" class="warn-list">
-          <div v-for="warning in pattern.warnings" :key="warning" class="issue issue--warning">
-            <span class="issue__icon" />
-            <div>{{ warning }}</div>
-          </div>
-        </div>
-      </PanelCard>
+    <template #download>
+      <div class="row">
+        <button type="button" class="btn" :disabled="!pattern" @click="exportPng">
+          <ImageDown /> 导出 PNG
+        </button>
+        <button type="button" class="btn" :disabled="!pattern" @click="exportCsv">
+          <Download /> 导出 CSV
+        </button>
+      </div>
+      <p class="section-note">CSV 含 hkl、d、|g|、相对强度与屏幕半径，可直接进 Origin。</p>
+    </template>
 
-      <PanelCard title="斑点表" :icon="Table2" :hint="`按强度排序 · 前 ${spotTable.length} 条`">
-        <div class="table-wrap spot-table">
-          <table class="data">
-            <thead>
-              <tr>
-                <th>(hkl)</th>
-                <th class="num">d (Å)</th>
-                <th class="num">|g| (Å⁻¹)</th>
-                <th class="num">I (%)</th>
-                <th class="num">R (mm)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="spot in spotTable"
-                :key="spot.hkl.join(',')"
-                :class="{ 'is-selected': selectedSpot?.hkl.join(',') === spot.hkl.join(',') }"
-                @click="selectedSpot = spot"
-              >
-                <td>{{ formatHkl(spot.hkl, 'round') }}</td>
-                <td class="num">{{ spot.d.toFixed(5) }}</td>
-                <td class="num">{{ spot.g.toFixed(5) }}</td>
-                <td class="num">{{ spot.intensityRel.toFixed(1) }}</td>
-                <td class="num">{{ Math.hypot(spot.rx, spot.ry).toFixed(3) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </PanelCard>
+    <template #copy>
+      <div class="row">
+        <button type="button" class="btn" :disabled="!pattern" @click="copySpots">
+          <Download /> 复制斑点表
+        </button>
+      </div>
+      <pre class="code-surface"><code>{{ spotText }}</code></pre>
     </template>
   </ToolPage>
 </template>

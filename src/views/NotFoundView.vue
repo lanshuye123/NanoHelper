@@ -31,10 +31,7 @@ import { ArrowLeft, Compass } from 'lucide-vue-next'
   font-weight: 800;
   letter-spacing: -0.05em;
   line-height: 1;
-  background: linear-gradient(120deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--accent);
   opacity: 0.9;
 }
 

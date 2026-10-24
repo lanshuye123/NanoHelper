@@ -183,24 +183,12 @@ const shortcuts = [
 }
 
 .about-hero {
-  padding: 26px 28px;
+  padding: 24px 26px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  background:
-    radial-gradient(760px 300px at 0% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 66%),
-    linear-gradient(160deg, var(--surface), var(--bg-soft));
+  background: var(--surface);
   box-shadow: var(--shadow-card);
-  margin-bottom: 16px;
-  position: relative;
-  overflow: hidden;
-}
-
-.about-hero::after {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto;
-  height: 3px;
-  background: linear-gradient(90deg, var(--module-about), transparent 70%);
+  margin-bottom: 14px;
 }
 
 .about-hero__eyebrow {
@@ -218,9 +206,9 @@ const shortcuts = [
 }
 
 .about-hero h1 {
-  font-size: clamp(28px, 3vw, 38px);
-  font-weight: 780;
-  letter-spacing: -0.03em;
+  font-size: clamp(25px, 2.6vw, 34px);
+  font-weight: 740;
+  letter-spacing: -0.025em;
   margin-top: 6px;
 }
 

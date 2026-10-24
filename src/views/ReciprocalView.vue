@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { Calculator, Grid3x3, Info, Ruler, ScanLine, Sparkles } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
+import type { DrawerState } from '@/components/tool/types'
 import PanelCard from '@/components/common/PanelCard.vue'
 import NumberField from '@/components/common/NumberField.vue'
 import MathText from '@/components/common/MathText.vue'
@@ -261,22 +263,47 @@ function openSaed() {
   if (presetId.value) structureStore.loadPreset(presetId.value)
   router.push({ path: '/crystal/saed', query: { zone: z.join(',') } })
 }
+const dText = computed(() => {
+  const head = `${'hkl'.padEnd(12)}${'d(Å)'.padStart(10)}${'|g|(Å⁻¹)'.padStart(12)}${'2θ(Cu Kα)'.padStart(11)}`
+  const rows = dTable.value.map((row) =>
+    [
+      formatHkl(row.hkl, 'round').padEnd(12),
+      row.d.toFixed(6).padStart(10),
+      row.g.toFixed(6).padStart(12),
+      (Number.isFinite(row.twoTheta) ? row.twoTheta.toFixed(4) : '—').padStart(11),
+    ].join(''),
+  )
+  return [head, ...rows].join('\n')
+})
+
+async function copyDTable() {
+  try {
+    await navigator.clipboard.writeText(dText.value)
+    ElMessage.success('已复制 d 值表')
+  } catch {
+    /* 剪贴板不可用时保持静默，用户仍可手动选择文本 */
+  }
+}
+
+const drawer = ref<DrawerState>('closed')
 </script>
 
 <template>
   <ToolPage
+    tool-id="reciprocal"
     title="倒易空间计算"
     subtitle="从六个晶格参数出发，计算 d 值、晶面/晶向夹角、晶带轴与二维倒易面，并直接送入 SAED 模拟。"
-    eyebrow="晶体几何 · 01"
     doc="/docs/userguide/reciprocal"
+    eyebrow="晶体几何 · 01"
+    v-model:result-state="drawer"
+    result-title="计算结果"
   >
-    <template #actions>
-      <el-button size="small" :disabled="!zoneVec" @click="openSaed">
-        <ScanLine class="btn-icon" /> 用该带轴模拟 SAED
-      </el-button>
+    <template #run>
+      <button type="button" class="btn btn--primary btn--lg" @click="drawer = 'half'">查看计算结果</button>
+      <button type="button" class="btn" :disabled="!zoneVec" @click="openSaed">用该带轴模拟 SAED</button>
     </template>
 
-    <template #config>
+    <template #params>
       <PanelCard title="晶格参数" :icon="Ruler">
         <div class="form-stack">
           <label class="field">
@@ -534,49 +561,27 @@ function openSaed() {
       </PanelCard>
     </div>
 
-    <PanelCard
-      title="二维倒易面"
-      :icon="Sparkles"
-      :hint="`带轴 ${zoneVec ? formatZone(zoneVec) : '—'} · 半径 ${maxG.toFixed(2)} Å⁻¹`"
-    >
+    <template #chart>
       <DiffractionCanvas
         v-if="zoneVec"
         :points="netPoints"
         :max-r="maxG"
-        :height="440"
-        caption="ZOLZ · 点击斑点可查看 g；基矢经约化"
+        :height="420"
+        :caption="`带轴 ${formatZone(zoneVec)} · 半径 ${maxG.toFixed(2)} Å⁻¹`"
       />
-      <div v-else class="small dim">请先输入有效的带轴指数</div>
-    </PanelCard>
+      <p v-else class="section-note">请先输入有效的带轴指数。</p>
+    </template>
 
-    <PanelCard title="d 值表" :icon="Grid3x3" :hint="`${dTable.length} 条（最多显示 500）`">
-      <div class="table-wrap d-table">
-        <table class="data">
-          <thead>
-            <tr>
-              <th>(hkl)</th>
-              <th class="num">d (Å)</th>
-              <th class="num">|g| (Å⁻¹)</th>
-              <th class="num">2θ (Cu Kα)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="row in dTable"
-              :key="row.hkl.join(',')"
-              :class="{ 'is-selected': selected?.join(',') === row.hkl.join(',') }"
-              @click="useAsPlane(row.hkl)"
-            >
-              <td>{{ formatHkl(row.hkl, 'round') }}</td>
-              <td class="num">{{ row.d.toFixed(6) }}</td>
-              <td class="num">{{ row.g.toFixed(6) }}</td>
-              <td class="num">{{ Number.isFinite(row.twoTheta) ? row.twoTheta.toFixed(4) : '—' }}</td>
-            </tr>
-          </tbody>
-        </table>
+    <template #text>
+      <pre class="code-surface"><code>{{ dText }}</code></pre>
+    </template>
+
+    <template #copy>
+      <div class="row">
+        <button type="button" class="btn" :disabled="!dTable.length" @click="copyDTable">复制 d 值表</button>
       </div>
-      <p class="tiny dim" style="margin-top: 8px">点击一行，依次填入晶面 A / 晶面 B；也可在右侧直接设为带轴。</p>
-    </PanelCard>
+      <pre class="code-surface"><code>{{ dText }}</code></pre>
+    </template>
   </ToolPage>
 </template>
 

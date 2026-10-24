@@ -138,11 +138,21 @@ const calloutTitles: Record<string, string> = {
   danger: '警告',
   info: '说明',
 }
+
+const CALLOUT_ICONS: Record<string, string> = {
+  tip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>',
+  warning:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
+  danger:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>',
+}
 for (const type of Object.keys(calloutTitles)) {
   md.use(container, type, {
     render(tokens: Array<{ nesting: number }>, idx: number) {
       if (tokens[idx].nesting === 1) {
-        return `<div class="callout callout--${type}"><div class="callout__title">${calloutTitles[type]}</div>\n`
+        const icon = CALLOUT_ICONS[type] ?? CALLOUT_ICONS.info
+        return `<div class="callout callout--${type}"><div class="callout__title">${icon}<span>${calloutTitles[type]}</span></div>\n`
       }
       return '</div>\n'
     },

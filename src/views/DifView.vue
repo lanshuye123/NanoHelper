@@ -13,6 +13,7 @@ import {
   Upload,
 } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
+import type { DrawerState } from '@/components/tool/types'
 import PanelCard from '@/components/common/PanelCard.vue'
 import FileDrop from '@/components/common/FileDrop.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -215,32 +216,45 @@ function exportTable() {
   )
   ElMessage.success('已导出，可直接在 Origin 中导入')
 }
+async function copyTable() {
+  try {
+    await navigator.clipboard.writeText(previewLines.value)
+    ElMessage.success('已复制导出表格')
+  } catch {
+    ElMessage.error('浏览器拒绝访问剪贴板')
+  }
+}
+
+const drawer = ref<DrawerState>('closed')
 </script>
 
 <template>
   <ToolPage
-    title="DIF → XY"
+    tool-id="dif"
+    title="DIF 转 XY"
     subtitle="解析 Jade 拟合导出的 DIF 多曲线，合成公共网格，导出 Origin 可用的多列数据，并按配方反算坐标。"
-    eyebrow="数据处理 · 03"
     doc="/docs/userguide/dif-to-xy"
+    eyebrow="数据处理 · 03"
+    v-model:result-state="drawer"
+    result-title="Origin 多列数据"
   >
-    <template #actions>
-      <el-button size="small" :loading="loading" @click="loadSampleDif">
-        <FlaskConical class="btn-icon" /> 载入 DEMO06
-      </el-button>
-      <el-button v-if="hasDif" size="small" type="primary" @click="exportTable">
-        <Download class="btn-icon" /> 导出表格
-      </el-button>
+    <template #run>
+      <button type="button" class="btn btn--primary btn--lg" :disabled="!hasDif" @click="drawer = 'half'">
+        查看导出结果
+      </button>
+      <button type="button" class="btn" :disabled="loading" :aria-busy="loading" @click="loadSampleDif">
+        载入 DEMO06
+      </button>
+      <button type="button" class="btn" :disabled="!hasDif" @click="exportTable">导出表格</button>
     </template>
 
-    <template #config>
-      <PanelCard title="DIF 文件" :icon="FileOutput">
-        <FileDrop
-          accept=".dif"
-          title="拖入 Jade DIF 文件"
-          hint="支持 Raw / Background / Fitted Profile / Overall 多块结构"
-          @files="onFile"
-        />
+    <template #input>
+      <FileDrop
+        accept=".dif"
+        title="拖入 Jade DIF 文件"
+        hint="支持 Raw / Background / Fitted Profile / Overall 多块结构"
+        @files="onFile"
+      />
         <div v-if="dif" class="file-info">
           <div class="file-info__title">{{ dif.title ?? fileName }}</div>
           <div class="file-info__meta mono">{{ fileName }} · {{ dif.date }} {{ dif.time }} · {{ dif.mode }}</div>
@@ -260,8 +274,9 @@ function exportTable() {
           </button>
           <div class="block-hint">点击可切换是否导出/绘制</div>
         </div>
-      </PanelCard>
+    </template>
 
+    <template #params>
       <PanelCard title="导出设置" :icon="Table2">
         <div class="form-stack">
           <label class="field">
@@ -365,63 +380,53 @@ function exportTable() {
       </PanelCard>
     </template>
 
-    <template v-if="!hasDif">
-      <EmptyState
-        title="把 Jade 的拟合结果变成可绘图的数据"
-        description="拖入 .dif 文件，或载入 Jade 自带的 DEMO06 示例。解析器会识别 Raw、Background、Fitted Profile 与 Overall 等数据块。"
-      >
-        <el-button type="primary" size="small" @click="loadSampleDif">载入 DEMO06</el-button>
-        <el-button size="small" @click="$router.push('/docs/userguide/dif-to-xy')">阅读文档</el-button>
-      </EmptyState>
-      <PanelCard title="DIF 结构" :icon="FileOutput">
-        <p class="small muted" style="line-height: 1.7">
-          Jade 导出的 DIF 由「文件头 → 参数行 → Y 数据」循环组成。参数行包含起始角、步长、
-          靶材、波长、终止角与点数；不同拟合块可以使用不同的角度范围。
-        </p>
-        <pre class="mono dif-sample">
-10/20/26 10:16  FIT Red Paint Pigment Mixture
- 20  0.02  4 Cu 1.54056  78  2901 (Raw Pattern)
- 372  403  384  390  429  418  460  401
- ...
- 20  0.02  4 Cu 1.54056  78  2901 (Background)
- ...
- 23.18  0.02  4 Cu 1.54056  29.12  298 (Fitted Profile 1)
- ...</pre>
-      </PanelCard>
+    <EmptyState
+      v-if="!hasDif"
+      title="把 Jade 的拟合结果变成可绘图的数据"
+      description="拖入 .dif 文件，或载入 Jade 自带的 DEMO06 示例。解析器会识别 Raw、Background、Fitted Profile 与 Overall 等数据块。"
+    >
+      <button type="button" class="btn btn--primary" @click="loadSampleDif">载入 DEMO06</button>
+      <button type="button" class="btn" @click="$router.push('/docs/userguide/dif-to-xy')">阅读文档</button>
+    </EmptyState>
+
+    <template #chart>
+      <SciChart
+        v-if="hasDif"
+        :series="series"
+        x-label="2θ"
+        x-unit="°"
+        y-label="Intensity"
+        y-unit="counts"
+        :height="320"
+      />
     </template>
 
-    <template v-else>
-      <div class="dif-stats">
-        <div v-for="item in stats" :key="item.label" class="stat">
-          <div class="stat__label">{{ item.label }}</div>
-          <div class="stat__value">
-            {{ item.value }}<span class="stat__unit">{{ item.unit }}</span>
-          </div>
-        </div>
-      </div>
-
-      <PanelCard title="曲线预览" :icon="Layers" hint="点击左侧色块可切换曲线">
-        <SciChart :series="series" x-label="2θ" x-unit="°" y-label="Intensity" y-unit="counts" :height="380" />
-      </PanelCard>
-
-      <PanelCard v-if="exportResult?.warnings.length" title="导出提示" :icon="CheckCircle2">
+    <template #text>
+      <pre class="code-surface"><code>{{ previewLines }}</code></pre>
+      <div v-if="exportResult?.warnings.length">
         <div v-for="warning in exportResult.warnings" :key="warning" class="issue issue--warning">
-          <span class="issue__icon" />
           <div>{{ warning }}</div>
         </div>
-      </PanelCard>
+      </div>
+    </template>
 
-      <PanelCard title="导出预览" :icon="Table2" :hint="`${exportResult?.gridSize ?? 0} 行`">
-        <pre class="mono preview">{{ previewLines }}</pre>
-        <div class="btn-row" style="margin-top: 10px">
-          <el-button type="primary" size="small" @click="exportTable">
-            <Download class="btn-icon" /> 下载 {{ exportAsCsv ? 'CSV' : 'XY' }}
-          </el-button>
-          <el-button size="small" @click="$router.push('/docs/cookbook/rietveld-origin')">
-            <ArrowRight class="btn-icon" /> Origin 绘图指南
-          </el-button>
-        </div>
-      </PanelCard>
+    <template #download>
+      <div class="row">
+        <button type="button" class="btn" :disabled="!hasDif" @click="exportTable">
+          下载 {{ exportAsCsv ? 'CSV' : 'XY' }}
+        </button>
+        <button type="button" class="btn" @click="$router.push('/docs/cookbook/rietveld-origin')">
+          Origin 绘图指南
+        </button>
+      </div>
+      <p class="section-note">共 {{ exportResult?.gridSize ?? 0 }} 行；格式与小数位在「导出设置」中调整。</p>
+    </template>
+
+    <template #copy>
+      <div class="row">
+        <button type="button" class="btn" :disabled="!hasDif" @click="copyTable">复制表格</button>
+      </div>
+      <pre class="code-surface"><code>{{ previewLines }}</code></pre>
     </template>
   </ToolPage>
 </template>

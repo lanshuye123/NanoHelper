@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -16,6 +16,7 @@ import {
   Save,
   Sparkles,
   Undo2,
+  Upload,
 } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
 import PanelCard from '@/components/common/PanelCard.vue'
@@ -31,9 +32,16 @@ import { loadSample, SAMPLES, type SampleId } from '@/data/samples'
 import { ANODES } from '@/core/diffraction/scattering'
 import { applyMapping, jadeModeDefaults } from '@/core/pipeline/jade'
 import { downloadText, readFileText, safeFilename } from '@/utils/download'
+import { useCommands } from '@/composables/useCommands'
+import SparkLine from '@/components/ui/SparkLine.vue'
+import type { DrawerState } from '@/components/tool/types'
 
 const project = useProjectStore()
 const router = useRouter()
+const { register, unregister } = useCommands()
+
+const drawer = ref<DrawerState>('closed')
+const inlineError = ref('')
 
 const pending = ref<ImportResult | null>(null)
 const xCol = ref(0)
@@ -97,6 +105,71 @@ const addStepItems = STEP_TYPES.map((type) => ({
   label: STEP_DEFINITIONS[type].label,
   description: STEP_DEFINITIONS[type].description,
 }))
+
+const summaryText = computed(() => {
+  const range = project.derivedRange
+  if (!range) return '尚未载入数据。'
+  const meta = project.derived?.meta
+  const xUnit = meta?.xUnit ?? ''
+  const yUnit = meta?.yUnit ?? ''
+  return [
+    `文件      ${project.source?.name ?? '未命名'}`,
+    `格式      ${project.source?.format ?? '—'}`,
+    `数据点    ${range.points.toLocaleString()}`,
+    `X 范围    ${range.xMin.toFixed(3)} – ${range.xMax.toFixed(3)} ${xUnit}`.trimEnd(),
+    `中位步长  ${range.stepMedian.toPrecision(5)} ${xUnit}`.trimEnd(),
+    `最大强度  ${range.yMax.toPrecision(6)} ${yUnit}`.trimEnd(),
+    `处理步骤  ${project.steps.length}`,
+  ].join('\n')
+})
+
+function run() {
+  if (!hasData.value) return
+  drawer.value = 'half'
+}
+
+async function copySummary() {
+  try {
+    await navigator.clipboard.writeText(summaryText.value)
+    ElMessage.success('已复制数据摘要')
+  } catch {
+    inlineError.value = '复制失败：浏览器拒绝访问剪贴板'
+  }
+}
+
+function registerCommands() {
+  register('data-import', [
+    {
+      id: 'import:clear',
+      label: '清空当前数据',
+      hint: '移除已导入的数据与处理步骤',
+      disabled: !project.hasData,
+      run: () => project.clear(),
+    },
+    { id: 'import:copy', label: '复制数据摘要', disabled: !hasData.value, run: copySummary },
+    { id: 'import:jade', label: '前往 Jade 导出', disabled: !hasData.value, run: goJade },
+  ])
+}
+
+onMounted(registerCommands)
+watch([() => project.hasData, () => project.steps.length], registerCommands)
+onBeforeUnmount(() => unregister('data-import'))
+
+const SPARK_VARIANTS: Record<string, 'diffraction' | 'spectrum' | 'thermal' | 'fit'> = {
+  'xrd-anatase': 'diffraction',
+  'raman-anatase': 'spectrum',
+  tga: 'thermal',
+  ir: 'spectrum',
+  'dif-demo06': 'fit',
+}
+
+const SPARK_COLORS: Record<string, string> = {
+  'xrd-anatase': 'var(--plot-1)',
+  'raman-anatase': 'var(--plot-3)',
+  tga: 'var(--plot-2)',
+  ir: 'var(--plot-5)',
+  'dif-demo06': 'var(--plot-4)',
+}
 
 function defaultParams(type: StepType): StepParams {
   const range = project.range
@@ -263,64 +336,124 @@ async function openProject(files: File[]) {
 
 <template>
   <ToolPage
-    title="导入与预处理"
-    subtitle="导入 XRD / 光谱 / 热分析数据，检查质量并构建可逆的变换链，最终输出 Jade 可读的 XY。"
-    eyebrow="数据处理 · 01"
+    tool-id="data-import"
+    title="XRD 数据预处理"
+    subtitle="导入谱图，裁剪、平滑、扣背底，再导出 Jade 可读的两列 XY。"
     doc="/docs/userguide/data-import"
+    eyebrow="数据处理 · 01"
+    v-model:result-state="drawer"
+    result-title="预处理结果"
   >
-    <template #actions>
-      <el-button v-if="hasData" size="small" :disabled="!project.history.length" @click="project.undo()">
-        <Undo2 class="btn-icon" /> 撤销
-      </el-button>
-      <el-button v-if="hasData" size="small" :disabled="!project.future.length" @click="project.redo()">
-        <Redo2 class="btn-icon" /> 重做
-      </el-button>
-      <el-button v-if="hasData" size="small" @click="resetSteps"> <RotateCcw class="btn-icon" /> 重置 </el-button>
-      <el-button v-if="hasData" type="primary" size="small" @click="goJade">
-        Jade 导出 <ArrowRight class="btn-icon" />
-      </el-button>
+    <!-- 1 · 数据输入 -->
+    <template #source>
+      <div class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title"><Database /> 数据源</h2>
+        </div>
+        <div class="panel__body">
+          <div v-if="project.source" class="source-line">
+            <span class="source-line__name">{{ project.source.name }}</span>
+            <span class="tag mono">{{ project.source.format ?? '数据' }}</span>
+            <span v-if="project.range" class="tag mono">{{ project.range.points.toLocaleString() }} pts</span>
+          </div>
+
+          <div class="source-actions">
+            <button type="button" class="btn btn--quiet" @click="pasteOpen = true">
+              <ClipboardPaste /> 粘贴文本
+            </button>
+            <button type="button" class="btn btn--quiet" :disabled="!project.hasData" @click="saveProject">
+              <Save /> 保存工程
+            </button>
+            <button type="button" class="btn btn--quiet" @click="projectInput?.click()">
+              <FolderOpen /> 打开工程
+            </button>
+            <button type="button" class="btn btn--quiet" :disabled="!project.hasData" @click="project.clear()">
+              清空
+            </button>
+          </div>
+
+          <input
+            ref="projectInput"
+            type="file"
+            accept=".json,.xtalbox"
+            hidden
+            @change="
+              ($event) => {
+                const f = ($event.target as HTMLInputElement).files?.[0]
+                if (f) openProject([f])
+                ;($event.target as HTMLInputElement).value = ''
+              }
+            "
+          />
+
+          <p class="field-hint">
+            支持 CSV / TSV / TXT / XY / DAT / DIF / XRDML / UXD。文件只在浏览器本地解析，不会上传。
+          </p>
+        </div>
+      </div>
     </template>
 
-    <template #config>
-      <PanelCard title="数据源" :icon="Database">
-        <div v-if="project.source" class="source-info">
-          <div class="source-info__name">{{ project.source.name }}</div>
-          <div class="source-info__meta">
-            <span class="chip chip--mono">{{ project.source.format ?? '数据' }}</span>
-            <span v-if="project.range" class="chip chip--mono">{{ project.range.points.toLocaleString() }} pts</span>
-          </div>
-          <div v-if="project.source.fileName" class="source-info__file mono">{{ project.source.fileName }}</div>
+    <template #input>
+      <div class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title"><Upload /> 导入数据</h2>
         </div>
-        <div class="btn-row" style="margin-top: 10px">
-          <el-button size="small" @click="pasteOpen = true"> <ClipboardPaste class="btn-icon" /> 粘贴文本 </el-button>
-          <el-button size="small" :disabled="!project.hasData" @click="saveProject">
-            <Save class="btn-icon" /> 保存工程
-          </el-button>
-          <el-button size="small" @click="projectInput?.click()"> <FolderOpen class="btn-icon" /> 打开工程 </el-button>
-          <el-button size="small" :disabled="!project.hasData" @click="project.clear()">清空</el-button>
-        </div>
-        <input
-          ref="projectInput"
-          type="file"
-          accept=".json,.xtalbox"
-          hidden
-          @change="
-            ($event) => {
-              const f = ($event.target as HTMLInputElement).files?.[0]
-              if (f) openProject([f])
-              ;($event.target as HTMLInputElement).value = ''
-            }
-          "
-        />
-        <div v-if="!project.hasData" class="hint-block">
-          <p class="small muted">支持 CSV / TSV / TXT / XY / DAT / DIF / XRDML / UXD。</p>
-          <p class="tiny dim">文件只在浏览器本地解析，不会上传。</p>
-        </div>
-      </PanelCard>
+        <div class="panel__body">
+          <FileDrop
+            v-if="!hasData"
+            accept=".csv,.tsv,.txt,.xy,.dat,.dif,.xrdml,.uxd,.asc"
+            title="拖入数据文件，或点击选择"
+            hint="CSV / TSV / TXT / XY / DAT / DIF / XRDML / UXD · 推荐两列：X + 强度"
+            @files="handleFiles"
+          />
+          <p v-else class="field-hint">
+            已载入数据。要更换文件，可在「数据源」中清空后重新导入。
+          </p>
 
-      <PanelCard v-if="project.hasData" title="变换步骤" :icon="Sparkles" :hint="`${steps.length} 步`">
-        <el-dropdown trigger="click" style="width: 100%" @command="onAddStepCommand">
-          <el-button size="small" style="width: 100%"> <Plus class="btn-icon" /> 添加处理步骤 </el-button>
+          <div class="row paste-row">
+            <button type="button" class="btn btn--quiet" @click="pasteOpen = true">
+              <ClipboardPaste /> 粘贴文本
+            </button>
+            <span class="field-hint">也可以直接从剪贴板粘贴两列数据</span>
+          </div>
+
+          <p v-if="inlineError" class="field-error" aria-live="polite">{{ inlineError }}</p>
+          <p v-else-if="importing" class="field-hint" aria-live="polite">正在解析文件…</p>
+        </div>
+      </div>
+    </template>
+
+    <!-- 2 · 常用参数 -->
+    <template #params>
+      <div v-if="pending?.columns" class="field-grid">
+        <label class="field">
+          <span class="field-label">X 列</span>
+          <el-select v-model="xCol" size="small">
+            <el-option
+              v-for="(_, index) in pending.columns"
+              :key="`x-${index}`"
+              :label="pending.headers[index] ?? `列 ${index + 1}`"
+              :value="index"
+            />
+          </el-select>
+        </label>
+        <label class="field">
+          <span class="field-label">Y 列</span>
+          <el-select v-model="yCol" size="small">
+            <el-option
+              v-for="(_, index) in pending.columns"
+              :key="`y-${index}`"
+              :label="pending.headers[index] ?? `列 ${index + 1}`"
+              :value="index"
+            />
+          </el-select>
+        </label>
+        <button type="button" class="btn btn--quiet" @click="applyColumns">应用列映射</button>
+      </div>
+
+      <div v-if="hasData" class="row">
+        <el-dropdown trigger="click" @command="onAddStepCommand">
+          <button type="button" class="btn btn--quiet"><Plus /> 添加处理步骤</button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item v-for="item in addStepItems" :key="item.type" :command="item.type">
@@ -332,123 +465,69 @@ async function openProject(files: File[]) {
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <span class="section-note">{{ steps.length }} 个步骤，可在「更多设置」中调整</span>
+      </div>
 
-        <div v-if="!steps.length" class="hint-block">
-          <p class="small muted">尚未添加步骤。原始数据会原样用于图表与 Jade 检查。</p>
-        </div>
-        <div v-else class="step-list">
-          <StepCard
-            v-for="(step, index) in steps"
-            :key="step.id"
-            :step="step"
-            :index="index"
-            :total="steps.length"
-            @update:params="setStepParams(step.id, $event)"
-            @toggle="project.toggleStep(step.id)"
-            @remove="project.removeStep(step.id)"
-            @move="project.moveStep(step.id, $event)"
-            @duplicate="project.duplicateStep(step.id)"
-          />
-        </div>
-      </PanelCard>
-
-      <PanelCard v-if="pending?.columns" title="列映射" :icon="Database">
-        <p class="small muted" style="margin-bottom: 10px">
-          文件包含 {{ pending.columns.length }} 列，选择用于 X/Y
-          的列。切换后会基于该文件重新建立数据集（已添加的步骤会清空）。
-        </p>
-        <div class="grid-2">
-          <label class="field">
-            <span class="field__label">X 列</span>
-            <el-select v-model="xCol" size="small">
-              <el-option
-                v-for="(_, index) in pending.columns"
-                :key="`x-${index}`"
-                :label="pending.headers[index] ?? `列 ${index + 1}`"
-                :value="index"
-              />
-            </el-select>
-          </label>
-          <label class="field">
-            <span class="field__label">Y 列</span>
-            <el-select v-model="yCol" size="small">
-              <el-option
-                v-for="(_, index) in pending.columns"
-                :key="`y-${index}`"
-                :label="pending.headers[index] ?? `列 ${index + 1}`"
-                :value="index"
-              />
-            </el-select>
-          </label>
-        </div>
-        <el-button size="small" type="primary" plain style="margin-top: 10px" @click="applyColumns">
-          应用列映射
-        </el-button>
-      </PanelCard>
     </template>
 
-    <template #aside>
-      <PanelCard v-if="hasData" title="下一步" :icon="Sparkles">
-        <div class="next-links">
-          <RouterLink to="/data/jade" class="next-link">
-            <FileOutput />
-            <span><b>Jade 导出</b><small>生成 .xy 与 recipe.json</small></span>
-          </RouterLink>
-          <RouterLink to="/data/dif" class="next-link">
-            <FileOutput />
-            <span><b>DIF → XY</b><small>把拟合结果还原给 Origin</small></span>
-          </RouterLink>
-          <RouterLink to="/crystal/reciprocal" class="next-link">
-            <Grid3x3 />
-            <span><b>倒易空间</b><small>d 值、夹角、带轴</small></span>
-          </RouterLink>
-        </div>
-      </PanelCard>
-
-      <PanelCard v-if="!hasData" title="课程要点" :icon="FlaskConical">
-        <p class="small muted" style="line-height: 1.65">
-          Jade 的横坐标必须在 0–140 之间，纵坐标必须始终大于 0。非衍射数据（Raman、IR、TGA）需要先做
-          <strong>可逆</strong> 的坐标映射；映射系数会写入配方，供 DIF → XY 反算。
-        </p>
-        <RouterLink to="/docs/cookbook/raman-to-jade" class="doc-inline">
-          阅读：Raman → Jade → Origin 全流程
-        </RouterLink>
-      </PanelCard>
-    </template>
-
-    <!-- No data: onboarding -->
-    <template v-if="!hasData">
-      <PanelCard title="导入数据" :icon="Database">
-        <FileDrop
-          accept=".csv,.tsv,.txt,.xy,.dat,.dif,.xrdml,.uxd,.asc"
-          title="拖入数据文件，或点击选择"
-          hint="CSV / TSV / TXT / XY / DAT / DIF / XRDML / UXD · 推荐两列：X + 强度"
-          @files="handleFiles"
-        />
-        <div class="import-actions">
-          <el-button size="small" @click="pasteOpen = true"> <ClipboardPaste class="btn-icon" /> 粘贴文本 </el-button>
-          <span class="tiny dim">也可以直接从剪贴板粘贴两列数据</span>
-        </div>
-      </PanelCard>
-
-      <PanelCard title="示例数据" :icon="Sparkles">
+    <div class="panel">
+      <div class="panel__head">
+        <h2 class="panel__title"><Sparkles /> 示例数据</h2>
+        <span class="panel__hint">无需准备文件</span>
+      </div>
+      <div class="panel__body">
         <div class="sample-grid">
           <button
             v-for="sample in SAMPLES"
             :key="sample.id"
-            class="sample-card"
             type="button"
+            class="sample-card"
             :disabled="importing"
             @click="loadSampleData(sample.id)"
           >
-            <span class="sample-card__tag">{{ sample.tag }}</span>
-            <span class="sample-card__title">{{ sample.title }}</span>
-            <span class="sample-card__desc">{{ sample.description }}</span>
+            <SparkLine
+              :variant="SPARK_VARIANTS[sample.id] ?? 'diffraction'"
+              :color="SPARK_COLORS[sample.id] ?? 'var(--plot-1)'"
+            />
+            <span class="sample-card__body">
+              <span class="sample-card__tag">{{ sample.tag }}</span>
+              <span class="sample-card__title">{{ sample.title }}</span>
+              <span class="sample-card__desc">{{ sample.description }}</span>
+            </span>
           </button>
         </div>
-      </PanelCard>
+      </div>
+    </div>
 
-      <PanelCard title="数据格式" :icon="FileOutput">
+    <!-- 3 · 更多设置 -->
+    <template #more>
+      <div v-if="steps.length" class="step-list">
+        <StepCard
+          v-for="(step, index) in steps"
+          :key="step.id"
+          :step="step"
+          :index="index"
+          :total="steps.length"
+          @update:params="setStepParams(step.id, $event)"
+          @toggle="project.toggleStep(step.id)"
+          @remove="project.removeStep(step.id)"
+          @move="project.moveStep(step.id, $event)"
+          @duplicate="project.duplicateStep(step.id)"
+        />
+      </div>
+      <p v-else class="section-note">尚未添加步骤。原始数据会原样用于图表与 Jade 检查。</p>
+
+      <div class="row">
+        <button type="button" class="btn btn--quiet" :disabled="!steps.length" @click="resetSteps">
+          <RotateCcw /> 重置步骤
+        </button>
+        <button type="button" class="btn btn--quiet" :disabled="!project.hasData" @click="project.clear()">
+          清空数据
+        </button>
+      </div>
+
+      <details class="sub-more">
+        <summary>支持的数据格式</summary>
         <div class="table-wrap">
           <table class="data">
             <thead>
@@ -477,54 +556,92 @@ async function openProject(files: File[]) {
               <tr>
                 <td class="text">Jade DIF</td>
                 <td class="text">多块拟合结果，自动识别 Raw/Overall</td>
-                <td class="text">到「DIF → XY」页导出</td>
+                <td class="text">到「DIF 转 XY」页导出</td>
               </tr>
             </tbody>
           </table>
         </div>
-      </PanelCard>
-
-      <PanelCard title="三步工作流" :icon="Sparkles">
-        <ol class="workflow">
-          <li><b>导入与检查</b><span>确认 X/Y 列、步长、负值与 NaN；必要时裁剪或重采样。</span></li>
-          <li><b>预处理</b><span>平滑、扣背底、Kα2 剥离、归一化；每步都可停用并从原始数据重算。</span></li>
-          <li><b>映射与导出</b><span>添加「Jade 坐标映射」满足 0–140 / Y&gt;0，导出 .xy 与可逆配方。</span></li>
-        </ol>
-      </PanelCard>
+      </details>
     </template>
 
-    <!-- With data -->
-    <template v-else>
-      <div v-if="stats" class="stats-row">
-        <div v-for="item in stats" :key="item.label" class="stat">
-          <div class="stat__label">{{ item.label }}</div>
-          <div class="stat__value">
-            {{ item.value }}<span v-if="item.unit" class="stat__unit">{{ item.unit }}</span>
-          </div>
+    <!-- 4 · 运行 -->
+    <template #run>
+      <button
+        type="button"
+        class="btn btn--primary btn--lg"
+        :disabled="!hasData || importing"
+        :aria-busy="importing"
+        @click="run"
+      >
+        查看预处理结果
+      </button>
+      <button type="button" class="btn" :disabled="!hasData" @click="goJade">导出到 Jade</button>
+    </template>
+
+    <!-- 结果 · 图表 -->
+    <template #chart>
+      <SciChart
+        v-if="hasData"
+        :series="chartSeries"
+        :x-label="project.derived?.meta.xLabel"
+        :x-unit="project.derived?.meta.xUnit"
+        :y-label="project.derived?.meta.yLabel"
+        :y-unit="project.derived?.meta.yUnit"
+        :height="320"
+      />
+    </template>
+
+    <!-- 结果 · 文本 -->
+    <template #text>
+      <pre class="code-surface"><code>{{ summaryText }}</code></pre>
+      <IssueList :issues="project.issues" />
+      <div v-if="project.applyResult?.issues.length">
+        <p class="section-note">步骤错误</p>
+        <div v-for="issue in project.applyResult.issues" :key="issue.stepId" class="issue issue--error">
+          <div>{{ issue.message }}</div>
         </div>
       </div>
+    </template>
 
-      <PanelCard title="曲线预览" :icon="Sparkles" hint="灰色为原始，青色为处理后">
-        <SciChart
-          :series="chartSeries"
-          :x-label="project.derived?.meta.xLabel"
-          :x-unit="project.derived?.meta.xUnit"
-          :y-label="project.derived?.meta.yLabel"
-          :y-unit="project.derived?.meta.yUnit"
-          :height="380"
-        />
-      </PanelCard>
+    <!-- 结果 · 下载 -->
+    <template #download>
+      <div class="row">
+        <button type="button" class="btn" @click="saveProject"><Save /> 保存工程</button>
+        <button type="button" class="btn" @click="goJade"><FileOutput /> 前往 Jade 导出</button>
+      </div>
+      <p class="section-note">
+        Jade 可读的两列 .xy 与 recipe.json 在「导出到 Jade」页生成；工程文件包含原始数据与全部步骤。
+      </p>
+    </template>
 
-      <PanelCard title="数据质量" :icon="FileOutput">
-        <IssueList :issues="project.issues" />
-        <div v-if="project.applyResult?.issues.length" style="margin-top: 10px">
-          <div class="section-label" style="margin-bottom: 6px">步骤错误</div>
-          <div v-for="issue in project.applyResult.issues" :key="issue.stepId" class="issue issue--error">
-            <span class="issue__icon" />
-            <div>{{ issue.message }}</div>
-          </div>
-        </div>
-      </PanelCard>
+    <!-- 结果 · 复制 -->
+    <template #copy>
+      <div class="row">
+        <button type="button" class="btn" @click="copySummary"><ClipboardPaste /> 复制摘要</button>
+      </div>
+      <pre class="code-surface"><code>{{ summaryText }}</code></pre>
+    </template>
+
+    <!-- 补充信息 -->
+    <template #aside>
+      <div class="next-links">
+        <RouterLink to="/data/jade" class="next-link">
+          <FileOutput />
+          <span><b>导出到 Jade</b><small>生成 .xy 与 recipe.json</small></span>
+        </RouterLink>
+        <RouterLink to="/data/dif" class="next-link">
+          <FileOutput />
+          <span><b>DIF 转 XY</b><small>把拟合结果还原给 Origin</small></span>
+        </RouterLink>
+        <RouterLink to="/crystal/reciprocal" class="next-link">
+          <Grid3x3 />
+          <span><b>倒易空间计算</b><small>d 值、夹角、带轴</small></span>
+        </RouterLink>
+      </div>
+      <p class="section-note">
+        Jade 的横坐标需在 0–140、纵坐标需大于 0。非衍射数据（Raman、IR、TGA）先做可逆坐标映射，系数写入配方供反算。
+        <RouterLink to="/docs/cookbook/raman-to-jade">查看全流程</RouterLink>
+      </p>
     </template>
   </ToolPage>
 
@@ -546,48 +663,67 @@ async function openProject(files: File[]) {
 </template>
 
 <style scoped>
-.btn-icon {
-  width: 13px;
-  height: 13px;
-  margin-right: 3px;
+.source-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
 }
 
-.source-info__name {
-  font-size: 13px;
+.source-line__name {
+  font-size: 14px;
   font-weight: 600;
+  color: var(--text);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.source-info__meta {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-
-.source-info__file {
-  margin-top: 6px;
-  font-size: 10px;
+.source-line__file {
+  font-size: 11.5px;
   color: var(--text-3);
   word-break: break-all;
 }
 
-.hint-block {
-  margin-top: 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: var(--surface-2);
-  border: 1px solid var(--border-soft);
+.source-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
 }
 
-.hint-block p + p {
-  margin-top: 3px;
+.source-actions :deep(.btn) {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.paste-row {
+  margin-top: 10px;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-2);
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 12px;
+  color: var(--text-2);
 }
 
 .step-list {
-  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .step-menu-item {
@@ -598,41 +734,49 @@ async function openProject(files: File[]) {
   padding: 2px 0;
 }
 
-.import-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
 .sample-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  gap: 12px;
 }
 
 .sample-card {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 11px 12px;
-  border-radius: var(--radius-sm);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text-2);
+  font-family: inherit;
   text-align: left;
   cursor: pointer;
   transition:
-    border-color 0.15s,
-    background 0.15s,
-    transform 0.15s;
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease),
+    transform var(--duration) var(--ease);
 }
 
 .sample-card:hover:not(:disabled) {
   border-color: var(--accent-line);
-  background: var(--accent-soft);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.sample-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sample-card__tag {
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .sample-card:disabled {
@@ -640,59 +784,31 @@ async function openProject(files: File[]) {
   cursor: wait;
 }
 
-.sample-card__tag {
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
 .sample-card__title {
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 650;
   color: var(--text);
 }
 
 .sample-card__desc {
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.5;
   color: var(--text-3);
 }
 
-.workflow {
-  margin: 0;
-  padding-left: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.sub-more {
+  border-top: 1px solid var(--border);
 }
 
-.workflow li {
-  color: var(--text-2);
-}
-
-.workflow b {
-  display: block;
+.sub-more summary {
+  padding: 8px 0;
   font-size: 12px;
-  color: var(--text);
-  font-weight: 600;
-}
-
-.workflow span {
-  font-size: 11px;
   color: var(--text-3);
+  cursor: pointer;
 }
 
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-@media (max-width: 720px) {
-  .stats-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.sub-more summary:hover {
+  color: var(--text);
 }
 
 .next-links {
@@ -704,56 +820,40 @@ async function openProject(files: File[]) {
 .next-link {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 8px 9px;
-  border-radius: 6px;
-  border: 1px solid var(--border-soft);
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   color: var(--text-2);
   text-decoration: none;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
 }
 
 .next-link:hover {
   background: var(--surface-2);
-  border-color: var(--border-strong);
   text-decoration: none;
 }
 
 .next-link svg {
   width: 15px;
   height: 15px;
-  color: var(--accent);
+  color: var(--text-3);
   flex: 0 0 auto;
 }
 
 .next-link span {
   display: flex;
   flex-direction: column;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .next-link b {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text);
   font-weight: 600;
 }
 
 .next-link small {
-  font-size: 10px;
-  color: var(--text-3);
-}
-
-.doc-inline {
-  display: inline-block;
-  margin-top: 8px;
   font-size: 11px;
-}
-
-@media (max-width: 640px) {
-  .source-info__meta {
-    gap: 4px;
-  }
+  color: var(--text-3);
 }
 </style>

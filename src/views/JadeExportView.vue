@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   ArrowLeft,
@@ -22,9 +22,13 @@ import { buildXy, defaultXyFilename } from '@/core/io/xy'
 import { buildRecipe, serializeRecipe } from '@/core/pipeline/recipe'
 import { jadeModeDefaults, mappingSummary, type JadeMapMode } from '@/core/pipeline/jade'
 import { downloadText } from '@/utils/download'
+import { useCommands } from '@/composables/useCommands'
+import type { DrawerState } from '@/components/tool/types'
 
 const project = useProjectStore()
 const version = '0.1.0'
+const { register, unregister } = useCommands()
+const drawer = ref<DrawerState>('closed')
 
 const decimalsX = ref(6)
 const decimalsY = ref(4)
@@ -147,6 +151,29 @@ function exportRecipe() {
   }
 }
 
+function registerCommands() {
+  register('jade-export', [
+    {
+      id: 'jade:export',
+      label: '导出 Jade .xy',
+      hint: '生成两列 XY（CRLF）',
+      disabled: !canExport.value,
+      run: exportXy,
+    },
+    {
+      id: 'jade:recipe',
+      label: '导出配方 JSON',
+      hint: '记录可逆映射系数',
+      disabled: !jadeStep.value,
+      run: exportRecipe,
+    },
+    { id: 'jade:copy', label: '复制文件预览', disabled: !preview.value, run: copyPreview },
+  ])
+}
+
+onMounted(registerCommands)
+onBeforeUnmount(() => unregister('jade-export'))
+
 async function copyPreview() {
   if (!preview.value) return
   try {
@@ -160,21 +187,15 @@ async function copyPreview() {
 
 <template>
   <ToolPage
-    title="Jade 导出"
+    tool-id="jade-export"
+    title="导出到 Jade"
     subtitle="检查 2θ 与强度范围，生成 MDI Jade 可直接读取的两列 XY，并保存可逆配方。"
-    eyebrow="数据处理 · 02"
     doc="/docs/userguide/jade-export"
+    eyebrow="数据处理 · 02"
+    v-model:result-state="drawer"
+    result-title="Jade 导出预览"
   >
-    <template #actions>
-      <el-button size="small" @click="$router.push('/data/import')">
-        <ArrowLeft class="btn-icon" /> 返回预处理
-      </el-button>
-      <el-button v-if="hasData" size="small" :disabled="!canExport" type="primary" @click="exportXy">
-        <Download class="btn-icon" /> 导出 .xy
-      </el-button>
-    </template>
-
-    <template #config>
+    <template #params>
       <PanelCard title="Jade 坐标映射" :icon="Wand2">
         <div v-if="!jadeStep" class="mapping-empty">
           <p class="small muted">尚未添加映射步骤。Jade 要求 0 ≤ X ≤ 140 且 Y &gt; 0；非衍射数据必须先映射。</p>
@@ -259,7 +280,9 @@ async function copyPreview() {
           </div>
         </div>
       </PanelCard>
+    </template>
 
+    <template #more>
       <PanelCard title="导出选项" :icon="FileOutput">
         <div class="form-stack">
           <label class="field">
@@ -322,60 +345,65 @@ async function copyPreview() {
       </PanelCard>
     </template>
 
-    <template v-if="!hasData">
+    <template #input>
+      <div v-if="hasData" class="source-line">
+        <span class="source-line__name">{{ project.source?.name }}</span>
+        <span class="tag mono">{{ project.derived?.x.length.toLocaleString() }} pts</span>
+        <span class="tag mono">
+          映射后 X:
+          {{ mapping ? `${mapping.outputX[0].toFixed(2)} – ${mapping.outputX[1].toFixed(2)}` : '未映射' }}
+        </span>
+      </div>
       <EmptyState
+        v-else
         title="还没有可导出的数据"
-        description="先在「导入与预处理」中导入文件或载入示例，添加 Jade 映射后即可导出。"
+        description="先在「XRD 数据预处理」中导入文件或载入示例，添加 Jade 映射后即可导出。"
       >
-        <el-button type="primary" size="small" @click="$router.push('/data/import')">去导入数据</el-button>
+        <button type="button" class="btn btn--primary" @click="$router.push('/data/import')">去导入数据</button>
       </EmptyState>
     </template>
 
-    <template v-else>
-      <div class="jade-stats">
-        <div class="stat">
-          <div class="stat__label">映射后 X</div>
-          <div class="stat__value">
-            {{ mapping ? `${mapping.outputX[0].toFixed(3)} – ${mapping.outputX[1].toFixed(3)}` : '—' }}
-          </div>
-        </div>
-        <div class="stat">
-          <div class="stat__label">映射后 Y</div>
-          <div class="stat__value">
-            {{ mapping ? `${mapping.outputY[0].toPrecision(5)} – ${mapping.outputY[1].toPrecision(5)}` : '—' }}
-          </div>
-        </div>
-        <div class="stat">
-          <div class="stat__label">数据点</div>
-          <div class="stat__value">{{ project.derived?.x.length.toLocaleString() }}</div>
-        </div>
-        <div class="stat">
-          <div class="stat__label">状态</div>
-          <div class="stat__value" :style="{ color: canExport ? 'var(--ok)' : 'var(--danger)' }">
-            {{ canExport ? '可导出' : '需修复' }}
-          </div>
-        </div>
+    <template #run>
+      <button type="button" class="btn btn--primary btn--lg" :disabled="!canExport" @click="drawer = 'half'">
+        查看导出预览
+      </button>
+      <button type="button" class="btn" :disabled="!canExport" @click="exportXy"><Download /> 导出 .xy</button>
+      <button type="button" class="btn" :disabled="!jadeStep" @click="exportRecipe"><FileJson /> 配方 JSON</button>
+    </template>
+
+    <template #chart>
+      <SciChart
+        v-if="hasData"
+        :series="mappedSeries"
+        :x-label="project.derived?.meta.xLabel"
+        :x-unit="project.derived?.meta.xUnit"
+        :y-label="project.derived?.meta.yLabel"
+        :y-unit="project.derived?.meta.yUnit"
+        :height="320"
+      />
+    </template>
+
+    <template #text>
+      <pre class="code-surface"><code>{{ previewLines }}</code></pre>
+    </template>
+
+    <template #download>
+      <div class="row">
+        <button type="button" class="btn" :disabled="!canExport" @click="exportXy">
+          <Download /> 导出 .xy
+        </button>
+        <button type="button" class="btn" :disabled="!jadeStep" @click="exportRecipe">
+          <FileJson /> 导出配方 JSON
+        </button>
       </div>
+      <p class="section-note">换行符与小数位可在「更多设置」中调整。</p>
+    </template>
 
-      <PanelCard title="映射后预览" :icon="Sparkles" hint="这就是 Jade 将读到的曲线">
-        <SciChart
-          :series="mappedSeries"
-          :x-label="project.derived?.meta.xLabel"
-          :x-unit="project.derived?.meta.xUnit"
-          :y-label="project.derived?.meta.yLabel"
-          :y-unit="project.derived?.meta.yUnit"
-          :height="360"
-        />
-      </PanelCard>
-
-      <PanelCard title="文件预览" :icon="FileOutput" hint="前 14 行">
-        <div class="preview-box">
-          <button class="icon-btn preview-copy" type="button" title="复制全文" @click="copyPreview">
-            <ClipboardCopy />
-          </button>
-          <pre class="mono">{{ previewLines }}</pre>
-        </div>
-      </PanelCard>
+    <template #copy>
+      <div class="row">
+        <button type="button" class="btn" @click="copyPreview"><ClipboardCopy /> 复制全文</button>
+      </div>
+      <pre class="code-surface"><code>{{ previewLines }}</code></pre>
     </template>
   </ToolPage>
 </template>

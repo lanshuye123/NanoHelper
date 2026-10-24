@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Atom, FileUp, FlaskConical, Grid3x3, Info, Layers, Pencil, ScanLine, Sparkles } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
+import type { DrawerState } from '@/components/tool/types'
 import PanelCard from '@/components/common/PanelCard.vue'
 import NumberField from '@/components/common/NumberField.vue'
 import { useStructureStore } from '@/stores/structure'
@@ -160,16 +161,47 @@ function loadPreset(id: string) {
   store.loadPreset(id)
   lastParse.value = null
 }
+const atomText = computed(() => {
+  const atoms = store.current.atoms
+  const head = `${'元素'.padEnd(6)}${'标签'.padEnd(10)}${'x'.padStart(10)}${'y'.padStart(10)}${'z'.padStart(10)}${'occ'.padStart(7)}${'B'.padStart(9)}`
+  const rows = atoms.map((atom) =>
+    [
+      (atom.element ?? '').padEnd(6),
+      (atom.label ?? '—').padEnd(10),
+      atom.x.toFixed(5).padStart(10),
+      atom.y.toFixed(5).padStart(10),
+      atom.z.toFixed(5).padStart(10),
+      (atom.occupancy ?? 1).toFixed(3).padStart(7),
+      (atom.biso ?? 0).toFixed(3).padStart(9),
+    ].join(''),
+  )
+  return [head, ...rows].join('\n')
+})
+
+async function copyAtoms() {
+  try {
+    await navigator.clipboard.writeText(atomText.value)
+    ElMessage.success('已复制原子位点')
+  } catch {
+    ElMessage.error('浏览器拒绝访问剪贴板')
+  }
+}
+
+const drawer = ref<DrawerState>('closed')
 </script>
 
 <template>
   <ToolPage
+    tool-id="structure"
     title="晶体结构"
     subtitle="从 CIF 读取晶胞、空间群与原子位点，按对称操作展开为完整晶胞，并检查密度、公式与低角反射。"
-    eyebrow="晶体几何 · 02"
     doc="/docs/userguide/structure"
+    eyebrow="晶体几何 · 02"
+    v-model:result-state="drawer"
+    result-title="结构摘要"
   >
-    <template #actions>
+    <template #run>
+      <button type="button" class="btn btn--primary btn--lg" @click="drawer = 'half'">查看原子位点</button>
       <el-button size="small" @click="pasteOpen = true"> <Pencil class="btn-icon" /> 粘贴 CIF </el-button>
       <el-button size="small" :loading="loading" @click="fileInput?.click()">
         <FileUp class="btn-icon" /> 导入 CIF
@@ -179,7 +211,7 @@ function loadPreset(id: string) {
       </el-button>
     </template>
 
-    <template #config>
+    <template #params>
       <PanelCard title="CIF 导入" :icon="FileUp">
         <div class="drop-mini" @click="fileInput?.click()">
           <FileUp />
@@ -386,6 +418,18 @@ function loadPreset(id: string) {
         </table>
       </div>
     </PanelCard>
+    <template #text>
+      <pre class="code-surface"><code>{{ atomText }}</code></pre>
+    </template>
+
+    <template #copy>
+      <div class="row">
+        <button type="button" class="btn" :disabled="!store.current.atoms.length" @click="copyAtoms">
+          复制原子位点
+        </button>
+      </div>
+      <pre class="code-surface"><code>{{ atomText }}</code></pre>
+    </template>
   </ToolPage>
 
   <el-dialog v-model="pasteOpen" title="粘贴 CIF" width="680px">

@@ -363,9 +363,7 @@ defineExpose({ exportPNG })
   width: 100%;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-soft);
-  background:
-    radial-gradient(600px 300px at 50% 0%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 70%),
-    var(--surface);
+  background: var(--surface);
   overflow: hidden;
 }
 

@@ -14,6 +14,7 @@ import {
   TrendingUp,
 } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
+import type { DrawerState } from '@/components/tool/types'
 import PanelCard from '@/components/common/PanelCard.vue'
 import NumberField from '@/components/common/NumberField.vue'
 import SciChart, { type ChartSeries, type ChartMarker } from '@/components/chart/SciChart.vue'
@@ -264,23 +265,53 @@ function exportCsv() {
   downloadText(lines.join('\n'), safeFilename(`XRD_peaks_${timestamp()}`, 'csv'), 'text/csv;charset=utf-8')
   ElMessage.success('已导出峰表')
 }
+const peakText = computed(() => {
+  if (!pattern.value) return '尚未计算。'
+  const head = `${'hkl'.padEnd(12)}${'d(Å)'.padStart(10)}${'2θ(°)'.padStart(10)}${'mult'.padStart(6)}${'|F|²'.padStart(13)}${'I(%)'.padStart(9)}`
+  const rows = reflections.value.slice(0, 300).map((r) =>
+    [
+      formatHkl(r.hkl, 'round').padEnd(12),
+      r.d.toFixed(5).padStart(10),
+      r.twoTheta.toFixed(4).padStart(10),
+      String(r.multiplicity).padStart(6),
+      r.f2.toExponential(3).padStart(13),
+      r.relIntensity.toFixed(2).padStart(9),
+    ].join(''),
+  )
+  return [head, ...rows].join('\n')
+})
+
+async function copyPeaks() {
+  try {
+    await navigator.clipboard.writeText(peakText.value)
+    ElMessage.success('已复制峰表')
+  } catch {
+    ElMessage.error('浏览器拒绝访问剪贴板')
+  }
+}
+
+const drawer = ref<DrawerState>('closed')
 </script>
 
 <template>
   <ToolPage
+    tool-id="xrd"
     title="XRD 模拟与分析"
     subtitle="由晶体结构计算理论粉末衍射谱：2θ、多重度、洛伦兹-偏振因子与峰型，并扩展到 Scherrer 与 Williamson–Hall 分析。"
-    eyebrow="衍射模拟 · 02"
     doc="/docs/userguide/xrd"
+    eyebrow="衍射模拟 · 02"
+    v-model:result-state="drawer"
+    result-title="理论谱与峰表"
   >
-    <template #actions>
-      <el-button size="small" :disabled="!pattern" @click="exportCsv"> <Table2 class="btn-icon" /> 峰表 CSV </el-button>
-      <el-button size="small" type="primary" :disabled="!pattern" @click="exportXy">
-        <Download class="btn-icon" /> 导出 .xy
-      </el-button>
+    <template #run>
+      <button type="button" class="btn btn--primary btn--lg" :disabled="!pattern" @click="drawer = 'half'">
+        查看模拟结果
+      </button>
+      <button type="button" class="btn" :disabled="!pattern" @click="exportCsv">峰表 CSV</button>
+      <button type="button" class="btn" :disabled="!pattern" @click="exportXy">导出 .xy</button>
     </template>
 
-    <template #config>
+    <template #params>
       <PanelCard title="晶体结构" :icon="FlaskConical">
         <StructurePicker />
       </PanelCard>
@@ -417,101 +448,53 @@ function exportCsv() {
       </PanelCard>
     </template>
 
-    <div v-if="result.error" class="issue issue--error">
-      <span class="issue__icon" />
-      <div>{{ result.error }}</div>
-    </div>
+    <p v-if="result.error" class="field-error" aria-live="polite">{{ result.error }}</p>
 
-    <template v-if="pattern">
-      <div class="xrd-stats">
-        <div v-for="item in stats" :key="item.label" class="stat">
-          <div class="stat__label">{{ item.label }}</div>
-          <div class="stat__value">
-            {{ item.value }}<span class="stat__unit">{{ item.unit }}</span>
-          </div>
+    <template #chart>
+      <SciChart
+        v-if="pattern"
+        :series="chartSeries"
+        x-label="2θ"
+        x-unit="°"
+        y-label="Counts"
+        y-unit="counts"
+        :height="320"
+        :markers="markers"
+      />
+      <SciChart
+        v-if="pattern"
+        :series="whSeries"
+        x-label="sin θ"
+        y-label="β cos θ"
+        y-unit="rad"
+        :height="240"
+        :show-legend="true"
+        :include-zero="false"
+      />
+    </template>
+
+    <template #text>
+      <pre class="code-surface"><code>{{ peakText }}</code></pre>
+      <div v-if="pattern?.warnings.length">
+        <div v-for="warning in pattern.warnings" :key="warning" class="issue issue--warning">
+          <div>{{ warning }}</div>
         </div>
       </div>
+    </template>
 
-      <PanelCard title="理论衍射谱" :icon="LineChart" :hint="`${anodeId} Kα1 · ${twoThetaMin}–${twoThetaMax}°`">
-        <SciChart
-          :series="chartSeries"
-          x-label="2θ"
-          x-unit="°"
-          y-label="Counts"
-          y-unit="counts"
-          :height="400"
-          :markers="markers"
-        />
-        <div v-if="pattern.warnings.length" class="warn-list">
-          <div v-for="warning in pattern.warnings" :key="warning" class="issue issue--warning">
-            <span class="issue__icon" />
-            <div>{{ warning }}</div>
-          </div>
-        </div>
-      </PanelCard>
-
-      <PanelCard title="峰表" :icon="Table2" :hint="`${reflections.length} 条反射`">
-        <div class="table-wrap peak-table">
-          <table class="data">
-            <thead>
-              <tr>
-                <th>(hkl)</th>
-                <th class="num">d (Å)</th>
-                <th class="num">2θ (°)</th>
-                <th class="num">多重度</th>
-                <th class="num">|F|²</th>
-                <th class="num">I (%)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="r in reflections.slice(0, 300)"
-                :key="r.hkl.join(',') + r.twoTheta"
-                :class="{ 'is-selected': selectedReflection === formatHkl(r.hkl, 'round') }"
-                @click="selectedReflection = formatHkl(r.hkl, 'round')"
-              >
-                <td>{{ formatHkl(r.hkl, 'round') }}</td>
-                <td class="num">{{ r.d.toFixed(5) }}</td>
-                <td class="num">{{ r.twoTheta.toFixed(4) }}</td>
-                <td class="num">{{ r.multiplicity }}</td>
-                <td class="num">{{ r.f2.toExponential(3) }}</td>
-                <td class="num">{{ r.relIntensity.toFixed(2) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </PanelCard>
-
-      <div class="two-col">
-        <PanelCard title="Williamson–Hall 图" :icon="TrendingUp" hint="βcosθ vs sinθ">
-          <SciChart
-            :series="whSeries"
-            x-label="sin θ"
-            y-label="β cos θ"
-            y-unit="rad"
-            :height="300"
-            :show-legend="true"
-            :include-zero="false"
-          />
-        </PanelCard>
-        <PanelCard title="分析提示" :icon="Sparkles">
-          <ul class="tips">
-            <li>峰宽需先扣除仪器展宽（用标准样测定的 FWHM–2θ 曲线）。</li>
-            <li>Scherrer 只给出尺寸下限；微应变会使 W–H 出现正斜率。</li>
-            <li>Kα2 未剥离时峰宽会被高估，建议先做 Kα2 剥离或固定 Kα1。</li>
-            <li>若各峰宽差异很大，先检查择优取向、堆垛层错与仪器条件。</li>
-          </ul>
-          <el-button
-            size="small"
-            text
-            type="primary"
-            style="padding-left: 0"
-            @click="$router.push('/docs/cookbook/scherrer')"
-          >
-            <ArrowRight class="btn-icon" /> Scherrer / W–H 实战手册
-          </el-button>
-        </PanelCard>
+    <template #download>
+      <div class="row">
+        <button type="button" class="btn" :disabled="!pattern" @click="exportXy">导出 .xy</button>
+        <button type="button" class="btn" :disabled="!pattern" @click="exportCsv">导出峰表 CSV</button>
       </div>
+      <p class="section-note">.xy 可直接在 Jade 中打开；叠加了实验数据时可在 Origin 对比。</p>
+    </template>
+
+    <template #copy>
+      <div class="row">
+        <button type="button" class="btn" :disabled="!pattern" @click="copyPeaks">复制峰表</button>
+      </div>
+      <pre class="code-surface"><code>{{ peakText }}</code></pre>
     </template>
   </ToolPage>
 </template>

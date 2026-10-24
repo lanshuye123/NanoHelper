@@ -7,23 +7,23 @@
 
 :root {
   --font-sans:
-    'Inter', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-    'Microsoft YaHei', sans-serif;
+    'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC',
+    'Source Han Sans SC', 'Microsoft YaHei', sans-serif;
   --font-mono: ui-monospace, 'JetBrains Mono', 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
 
   /* geometry */
-  --topbar-h: 58px;
+  --topbar-h: 64px;
   --header-h: var(--topbar-h);
   --status-h: 26px;
   --sidebar-w: 250px;
   --sidebar-w-collapsed: 64px;
   --content-max: 1680px;
-  --shell-gap: 10px;
+  --shell-gap: 12px;
 
-  --radius: 9px;
-  --radius-sm: 6px;
-  --radius-xs: 4px;
-  --radius-lg: 12px;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+  --radius-lg: 20px;
   --radius-pill: 999px;
 
   /* type scale */
@@ -35,9 +35,16 @@
   --fs-xl: 19px;
   --fs-2xl: 24px;
 
+  /* 8px spacing grid */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+
   /* timings */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --duration: 0.16s;
+  --duration-slow: 0.2s;
 }
 
 /* ------------------------------------------------------------ light */
@@ -61,11 +68,11 @@
   --text-2: #4a6580;
   --text-3: #7b91a8;
 
-  --accent: #2f7fc1;
-  --accent-strong: #1f66a3;
-  --accent-2: #47a8d8;
-  --accent-soft: rgba(47, 127, 193, 0.095);
-  --accent-line: rgba(47, 127, 193, 0.32);
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --accent-2: #60a5fa;
+  --accent-soft: rgba(37, 99, 235, 0.09);
+  --accent-line: rgba(37, 99, 235, 0.3);
 
   --ok: #1f8a5f;
   --ok-soft: rgba(31, 138, 95, 0.1);
@@ -76,34 +83,34 @@
   --info: #2f7fc1;
 
   /* module colours */
-  --module-data: #2f7fc1;
-  --module-diffraction: #2a9d8f;
-  --module-crystal: #5a6fc4;
-  --module-docs: #3f8fb7;
-  --module-about: #6a7d92;
+  --module-data: #2563eb;
+  --module-diffraction: #0ea5a4;
+  --module-crystal: #7c3aed;
+  --module-docs: #0891b2;
+  --module-about: #64748b;
 
   /* chart palette */
-  --plot-1: #2f7fc1;
-  --plot-2: #d08a2e;
-  --plot-3: #6f5bd4;
-  --plot-4: #d04f6e;
-  --plot-5: #2f9e7e;
-  --plot-6: #4aa8e0;
+  --plot-1: #2563eb;
+  --plot-2: #d97706;
+  --plot-3: #7c3aed;
+  --plot-4: #db2777;
+  --plot-5: #059669;
+  --plot-6: #38bdf8;
   --grid-line: rgba(25, 75, 120, 0.07);
   --grid-line-strong: rgba(25, 75, 120, 0.14);
   --chart-bg: #ffffff;
 
-  /* shadows */
+  /* shadows — kept deliberately light so borders do the separating */
   --shadow-sm: 0 1px 2px rgba(21, 62, 99, 0.06);
   --shadow-card: 0 2px 10px rgba(21, 62, 99, 0.055);
-  --shadow: 0 14px 36px rgba(21, 62, 99, 0.13);
+  --shadow: 0 12px 30px rgba(21, 62, 99, 0.12);
   --glow: 0 0 0 1px rgba(47, 127, 193, 0.22), 0 0 26px rgba(47, 127, 193, 0.07);
 
   --code-bg: #f2f7fd;
 
   /* top navbar */
   --nav-bg-start: #174f7f;
-  --nav-bg-end: #2b7fbe;
+  --nav-bg-end: #174f7f;
   --nav-divider: #7fc4ef;
   --nav-text: #f3f9ff;
   --nav-muted: rgba(240, 249, 255, 0.68);
@@ -113,16 +120,6 @@
   --nav-active-bg: #ffffff;
   --nav-active-text: #17527f;
   --nav-brand-sub: rgba(232, 246, 255, 0.72);
-
-  /* sidebar */
-  --sidebar-bg: #f8fbff;
-  --sidebar-header-start: #e4f1fd;
-  --sidebar-header-end: #f5faff;
-  --sidebar-header-text: #174f7f;
-  --sidebar-item-text: #48637f;
-  --sidebar-item-hover: #edf5fd;
-  --sidebar-item-active: #e3f0fc;
-  --sidebar-item-active-text: #174f7f;
 
   /* status bar */
   --status-bg: #102a43;
@@ -184,14 +181,15 @@
   --chart-bg: #0e1e2e;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.26);
-  --shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.28);
+  --shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.42);
+  --shadow: 0 18px 42px rgba(0, 0, 0, 0.44);
   --glow: 0 0 0 1px rgba(90, 169, 230, 0.28), 0 0 28px rgba(90, 169, 230, 0.1);
 
   --code-bg: #0a1826;
 
   --nav-bg-start: #06182a;
-  --nav-bg-end: #0e3557;
+  --nav-bg-end: #06182a;
   --nav-divider: #2b7fb8;
   --nav-text: #eef7ff;
   --nav-muted: rgba(214, 235, 252, 0.62);
@@ -201,15 +199,6 @@
   --nav-active-bg: #5aa9e6;
   --nav-active-text: #041422;
   --nav-brand-sub: rgba(190, 222, 248, 0.66);
-
-  --sidebar-bg: #0b1a29;
-  --sidebar-header-start: #0d2438;
-  --sidebar-header-end: #0b1a29;
-  --sidebar-header-text: #cfe7fb;
-  --sidebar-item-text: #a5bcd2;
-  --sidebar-item-hover: #132538;
-  --sidebar-item-active: #14324b;
-  --sidebar-item-active-text: #eaf5ff;
 
   --status-bg: #050f18;
   --status-text: rgba(190, 214, 235, 0.62);
