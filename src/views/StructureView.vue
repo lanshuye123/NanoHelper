@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Atom, FileUp, FlaskConical, Grid3x3, Info, Layers, Pencil, ScanLine, Sparkles } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
 import type { DrawerState } from '@/components/tool/types'
@@ -15,6 +15,7 @@ import { atomicMass } from '@/core/diffraction/scattering'
 import { STRUCTURE_PRESETS } from '@/data/presets'
 import { readFileText } from '@/utils/download'
 import { formatHkl } from '@/core/math/vec'
+import { useToolDraft } from '@/composables/useToolDraft'
 
 const router = useRouter()
 const store = useStructureStore()
@@ -24,6 +25,44 @@ const pasteOpen = ref(false)
 const pasteText = ref('')
 const loading = ref(false)
 const lastParse = ref<{ asymmetric: number; expanded: number; ops: number; source: string } | null>(null)
+
+const draft = useToolDraft({
+  toolId: 'structure',
+  defaults: () => ({ pasteText: '' }),
+  snapshot: () => ({ pasteText: pasteText.value }),
+  restore: (data) => {
+    pasteText.value = data.pasteText
+  },
+})
+
+const lastSaved = computed(() => {
+  const values = [draft.savedAt ?? 0, store.savedAt ?? 0]
+  const latest = Math.max(...values)
+  return latest > 0 ? latest : null
+})
+
+const wasRestored = computed(() => draft.restored || store.restored)
+
+function resetAll() {
+  draft.reset()
+  lastParse.value = null
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm(
+      '将把当前晶体结构恢复为默认预设，并清除 CIF 粘贴内容与自动保存记录；其他使用当前结构的页面会同步变化。确定继续？',
+      '清空本页',
+      { confirmButtonText: '清空', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return
+  }
+  store.resetToDefault()
+  draft.clear()
+  lastParse.value = null
+  ElMessage.success('已恢复默认结构并清空本页')
+}
 
 const lattice = computed(() => {
   try {
@@ -191,14 +230,19 @@ const drawer = ref<DrawerState>('closed')
 </script>
 
 <template>
-  <ToolPage
+  <div class="tool-root">
+    <ToolPage
     tool-id="structure"
     title="晶体结构"
     subtitle="从 CIF 读取晶胞、空间群与原子位点，按对称操作展开为完整晶胞，并检查密度、公式与低角反射。"
     doc="/docs/userguide/structure"
-    eyebrow="晶体几何 · 02"
     v-model:result-state="drawer"
     result-title="结构摘要"
+    :saved-at="lastSaved"
+    :restored="wasRestored"
+    :state-error="draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #run>
       <button type="button" class="btn btn--primary btn--lg" @click="drawer = 'half'">查看原子位点</button>
@@ -440,6 +484,7 @@ const drawer = ref<DrawerState>('closed')
       <el-button size="small" type="primary" :loading="loading" @click="importPaste">解析</el-button>
     </template>
   </el-dialog>
+  </div>
 </template>
 
 <style scoped>

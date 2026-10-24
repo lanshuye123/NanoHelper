@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Atom, Box, Copy, Download, FlaskConical, Layers, Percent, Scale } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
 import type { DrawerState, ResultTab } from '@/components/tool/types'
@@ -10,6 +10,7 @@ import MathText from '@/components/common/MathText.vue'
 import StructurePicker from '@/components/structure/StructurePicker.vue'
 import { STRUCTURE_PRESETS } from '@/data/presets'
 import { useStructureStore } from '@/stores/structure'
+import { useToolDraft } from '@/composables/useToolDraft'
 import { atomicMass } from '@/core/diffraction/scattering'
 import { buildLattice, dSpacing, type CellParams } from '@/core/lattice/cell'
 import {
@@ -37,6 +38,55 @@ const manualZ = ref(8)
 const measuredDensity = ref(2.329)
 const packingType = ref<PackingType>('diamond')
 const cOverA = ref(Math.sqrt(8 / 3))
+
+const draft = useToolDraft({
+  toolId: 'cell',
+  defaults: () => ({
+    sourceMode: 'structure' as const,
+    manualCell: { a: 5.431, b: 5.431, c: 5.431, alpha: 90, beta: 90, gamma: 90 },
+    manualFormula: 'Si',
+    manualZ: 8,
+    measuredDensity: 2.329,
+    packingType: 'diamond' as const,
+    cOverA: Math.sqrt(8 / 3),
+  }),
+  snapshot: () => ({
+    sourceMode: sourceMode.value,
+    manualCell: { ...manualCell },
+    manualFormula: manualFormula.value,
+    manualZ: manualZ.value,
+    measuredDensity: measuredDensity.value,
+    packingType: packingType.value,
+    cOverA: cOverA.value,
+  }),
+  restore: (data) => {
+    sourceMode.value = data.sourceMode === 'manual' ? 'manual' : 'structure'
+    Object.assign(manualCell, data.manualCell)
+    manualFormula.value = data.manualFormula
+    manualZ.value = data.manualZ
+    measuredDensity.value = data.measuredDensity
+    packingType.value = data.packingType
+    cOverA.value = data.cOverA
+  },
+})
+
+function resetAll() {
+  draft.reset()
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm('将清空本页的晶胞参数、化学式、密度和自动保存记录；不会重置其他页面共用的晶体结构。确定继续？', '清空本页', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  draft.clear()
+  ElMessage.success('已清空本页')
+}
 
 const activeCell = computed<CellParams>(() => (sourceMode.value === 'structure' ? store.current.cell : manualCell))
 const structureAtoms = computed(() => (sourceMode.value === 'structure' ? store.current.atoms : []))
@@ -257,11 +307,15 @@ async function copyReport() {
     tool-id="cell"
     title="晶胞与密度"
     subtitle="由晶格参数与晶胞内容计算体积、理论密度、Z 值、化学式量与原子堆积因子，并给出低角反射预览。"
-    eyebrow="晶体几何 · 03"
     doc="/docs/userguide/cell"
     v-model:result-state="drawer"
     result-title="晶胞计算报告"
     :result-tabs="resultTabs"
+    :saved-at="draft.savedAt"
+    :restored="draft.restored"
+    :state-error="draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #run>
       <button type="button" class="btn btn--primary btn--lg" @click="drawer = 'half'">查看计算报告</button>

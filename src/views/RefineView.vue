@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Copy,
   Download,
@@ -33,6 +33,7 @@ import {
   type RefineResult,
 } from '@/core/crystallography/refine'
 import { downloadText, safeFilename, timestamp } from '@/utils/download'
+import { useToolDraft } from '@/composables/useToolDraft'
 
 const store = useStructureStore()
 const drawer = ref<DrawerState>('closed')
@@ -47,6 +48,58 @@ const result = ref<RefineResult | null>(null)
 const error = ref('')
 const pasteText = ref('')
 const presetId = ref('')
+
+const draft = useToolDraft({
+  toolId: 'lattice-refine',
+  defaults: () => ({
+    anodeId: 'Cu',
+    wavelength: 1.54056,
+    initialCell: { ...STRUCTURE_PRESETS[0].cell, a: 5.4, b: 5.4, c: 5.4 },
+    flags: { ...DEFAULT_REFINE_FLAGS },
+    peaks: [] as RefinePeak[],
+    pasteText: '',
+    presetId: '',
+  }),
+  snapshot: () => ({
+    anodeId: anodeId.value,
+    wavelength: wavelength.value,
+    initialCell: { ...initialCell },
+    flags: { ...flags },
+    peaks: peaks.value.map((peak) => ({ ...peak })),
+    pasteText: pasteText.value,
+    presetId: presetId.value,
+  }),
+  restore: (data) => {
+    anodeId.value = data.anodeId
+    wavelength.value = data.wavelength
+    Object.assign(initialCell, data.initialCell)
+    Object.assign(flags, data.flags)
+    peaks.value = Array.isArray(data.peaks) ? data.peaks.map((peak) => ({ ...peak })) : []
+    pasteText.value = data.pasteText
+    presetId.value = data.presetId
+  },
+})
+
+function resetAll() {
+  draft.reset()
+  result.value = null
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm('将清空本页峰表、精修参数、结果和自动保存记录；不会重置其他页面共用的晶体结构。确定继续？', '清空本页', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  draft.clear()
+  result.value = null
+  error.value = ''
+  ElMessage.success('已清空本页')
+}
 
 const wavelengthLabel = computed(() => {
   const anode = ANODES.find((a) => a.id === anodeId.value)
@@ -303,6 +356,10 @@ async function copyReport() {
 }
 
 onMounted(() => {
+  if (draft.restored) {
+    if (peaks.value.length) runRefine()
+    return
+  }
   loadExample(true)
   runRefine()
 })
@@ -313,11 +370,15 @@ onMounted(() => {
     tool-id="lattice-refine"
     title="晶格参数精修"
     subtitle="从一组带 hkl 指标的峰位出发，用非线性最小二乘同时精修晶格参数与仪器零点，并给出 Nelson–Riley 外推。"
-    eyebrow="晶体几何 · 05"
     doc="/docs/userguide/lattice-refine"
     v-model:result-state="drawer"
     result-title="精修结果"
     :result-tabs="resultTabs"
+    :saved-at="draft.savedAt"
+    :restored="draft.restored"
+    :state-error="draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #run>
       <button type="button" class="btn btn--primary btn--lg" :disabled="!peaks.length" @click="runRefine">

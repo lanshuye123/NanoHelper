@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Camera, Download, Gauge, Grid3x3, ImageDown, ScanLine, Sparkles, Table2 } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
 import type { DrawerState } from '@/components/tool/types'
@@ -22,6 +22,7 @@ import { formatHkl } from '@/core/math/vec'
 import { formatZone } from '@/core/lattice/planeNet'
 import { useStructureStore } from '@/stores/structure'
 import { downloadText, safeFilename, timestamp } from '@/utils/download'
+import { useToolDraft } from '@/composables/useToolDraft'
 
 const route = useRoute()
 const router = useRouter()
@@ -41,6 +42,68 @@ const canvasRef = ref<{ exportPNG: (filename?: string) => void } | null>(null)
 
 const measuredR = ref(10)
 const knownD = ref(2.5)
+
+const draft = useToolDraft({
+  toolId: 'saed',
+  defaults: () => ({
+    zone: { u: 1, v: 1, w: 0 },
+    voltageKv: 200,
+    cameraLengthMm: 800,
+    maxG: 0.8,
+    sizeMode: 'sqrt' as const,
+    hideAbsent: true,
+    showLabels: true,
+    displayUnit: 'invA' as const,
+    measuredR: 10,
+    knownD: 2.5,
+  }),
+  snapshot: () => ({
+    zone: { u: zone.u, v: zone.v, w: zone.w },
+    voltageKv: voltageKv.value,
+    cameraLengthMm: cameraLengthMm.value,
+    maxG: maxG.value,
+    sizeMode: sizeMode.value,
+    hideAbsent: hideAbsent.value,
+    showLabels: showLabels.value,
+    displayUnit: displayUnit.value,
+    measuredR: measuredR.value,
+    knownD: knownD.value,
+  }),
+  restore: (data) => {
+    zone.u = data.zone.u
+    zone.v = data.zone.v
+    zone.w = data.zone.w
+    voltageKv.value = data.voltageKv
+    cameraLengthMm.value = data.cameraLengthMm
+    maxG.value = data.maxG
+    sizeMode.value = data.sizeMode === 'linear' || data.sizeMode === 'equal' ? data.sizeMode : 'sqrt'
+    hideAbsent.value = data.hideAbsent
+    showLabels.value = data.showLabels
+    displayUnit.value = data.displayUnit === 'mm' ? 'mm' : 'invA'
+    measuredR.value = data.measuredR
+    knownD.value = data.knownD
+  },
+})
+
+function resetAll() {
+  draft.reset()
+  selectedSpot.value = null
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm('将清空本页带轴、衍射条件、标定参数和自动保存记录；不会清除当前晶体结构。确定继续？', '清空本页', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  draft.clear()
+  selectedSpot.value = null
+  ElMessage.success('已清空本页')
+}
 
 const result = computed(() => {
   try {
@@ -197,9 +260,13 @@ const drawer = ref<DrawerState>('closed')
     title="SAED 模拟"
     subtitle="选择晶体结构与带轴，计算 ZOLZ 斑点位置、结构因子强度与指数标注，并可直接导出图片或表格。"
     doc="/docs/userguide/saed"
-    eyebrow="衍射模拟 · 01"
     v-model:result-state="drawer"
     result-title="衍射斑点"
+    :saved-at="draft.savedAt"
+    :restored="draft.restored"
+    :state-error="draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #run>
       <button

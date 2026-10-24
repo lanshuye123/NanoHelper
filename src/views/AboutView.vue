@@ -18,8 +18,8 @@ watch(
 const version = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0'
 const scope = [
   ['数据处理', '导入、裁剪、平滑、扣背底、Kα2 与 Jade / Origin 往返'],
-  ['衍射与晶体', '倒易空间、SAED 与 XRD 模拟、晶胞与密度、晶面与晶带'],
-  ['显微分析', 'SEM/TEM 粒径统计、SAED 指标化、电镜参数与 CTF'],
+  ['衍射与晶体', '倒易空间、艾瓦德球与劳厄带、SAED/XRD、对称性与消光'],
+  ['显微分析', 'SEM/TEM 粒径统计、SAED 指标化、多晶衍射环、电镜参数'],
   ['三维结构', '按空间群查看三维晶胞、Wyckoff 位置与原子点位'],
 ]
 
@@ -80,7 +80,7 @@ const shortcuts = [
             </div>
           </div>
           <p class="tiny dim" style="margin-top: 10px">
-            结果可导出为 CSV、TXT、PNG 或工程文件；离开页面前请保存需要的数据。
+            结果可导出为 CSV、TXT、PNG 或工程文件；输入会自动保存，更换设备前建议导出需要的结果。
           </p>
         </div>
       </section>

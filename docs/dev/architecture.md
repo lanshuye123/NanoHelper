@@ -79,6 +79,16 @@ project.derived（当前结果）+ resolved（解析后的映射系数）
 - 主题、侧栏收起、移动端抽屉；
 - 写入 `localStorage`，不涉及数据。
 
+### tool state
+
+- `useToolDraft`：表单参数，localStorage，键 `ctb.tool.<toolId>`，带版本号与默认值合并；
+- `useToolRecord`：谱图、DIF、图像、测量记录，IndexedDB（`crystaltoolbox/tool-records`）；
+- `project` store 自动保存 `raw + source + steps`，应用启动时恢复；`clear()` 同时删除记录；
+- `structure` store 自动保存当前结构与预设，普通工具页清空不会重置它；
+- 恢复在 watcher 启动前完成；`reset()` 只重置本页参数，`clear()` 删除记录；
+- 大对象必须先去掉 Vue 代理，`Float64Array`/`Blob` 显式复制后再写入；
+- 保存失败只提示，不阻塞计算与导出。界面文案使用“自动保存 / 恢复默认 / 清空本页”。
+
 ## 渲染
 
 ### SciChart

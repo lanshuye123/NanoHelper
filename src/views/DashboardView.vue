@@ -8,7 +8,7 @@ const featureModules = NAV_MODULES.filter((module) =>
 )
 
 const heroStats = [
-  { value: '14', label: '个工具页面' },
+  { value: '17', label: '个工具页面' },
   { value: '4', label: '个计算模块' },
   { value: '7', label: '类分析任务' },
 ]

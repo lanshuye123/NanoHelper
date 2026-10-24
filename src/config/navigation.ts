@@ -81,7 +81,7 @@ const GROUP_META: Record<
     description: '倒易空间、晶带、晶胞与 CIF 结构解析',
     icon: Atom,
     accent: 'var(--module-crystal)',
-    highlights: ['d 值/夹角', '晶带轴', 'CIF 展开'],
+    highlights: ['艾瓦德球', '对称性', 'CIF 展开'],
   },
   micro: {
     key: 'micro',
@@ -90,7 +90,7 @@ const GROUP_META: Record<
     description: 'SEM/TEM 图像、电子衍射与电镜参数',
     icon: Microscope,
     accent: 'var(--module-micro)',
-    highlights: ['粒径统计', 'SAED 指标化', '电镜参数'],
+    highlights: ['粒径统计', '多晶环', '电镜参数'],
   },
 }
 

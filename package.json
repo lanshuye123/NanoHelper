@@ -1,6 +1,6 @@
 {
   "name": "crystal-toolbox",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "纳米材料与晶体学工具箱 — 纯前端 XRD/SAED 数据处理、显微分析与晶体学计算",

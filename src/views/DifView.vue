@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowRight,
   CheckCircle2,
@@ -23,6 +23,8 @@ import { parseDif, exportDif, blockX, type DifFile, type DifExportOptions } from
 import { parseRecipe, type Recipe } from '@/core/pipeline/recipe'
 import { mappingSummary } from '@/core/pipeline/jade'
 import { downloadText, readFileText, safeFilename, timestamp } from '@/utils/download'
+import { useToolDraft } from '@/composables/useToolDraft'
+import { useToolRecord } from '@/composables/useToolRecord'
 
 const dif = ref<DifFile | null>(null)
 const fileName = ref('')
@@ -39,6 +41,103 @@ const options = ref({
   decimalsX: 5,
   decimalsY: 4,
 })
+
+const draft = useToolDraft({
+  toolId: 'dif',
+  defaults: () => ({
+    exportAsCsv: true,
+    headerComments: true,
+    options: {
+      format: 'wide' as DifExportOptions['format'],
+      xAxis: 'twoTheta' as DifExportOptions['xAxis'],
+      fillOutside: 'zero' as 'zero' | 'nan',
+      decimalsX: 5,
+      decimalsY: 4,
+    },
+  }),
+  snapshot: () => ({
+    exportAsCsv: exportAsCsv.value,
+    headerComments: headerComments.value,
+    options: { ...options.value },
+  }),
+  restore: (data) => {
+    exportAsCsv.value = data.exportAsCsv
+    headerComments.value = data.headerComments
+    Object.assign(options.value, data.options)
+  },
+})
+
+function plainDif(file: DifFile): DifFile {
+  return {
+    ...file,
+    blocks: file.blocks.map((block) => ({
+      ...block,
+      y: new Float64Array(block.y),
+      warnings: [...block.warnings],
+    })),
+    warnings: [...file.warnings],
+  }
+}
+
+const record = useToolRecord<{
+  dif: DifFile | null
+  fileName: string
+  selectedBlocks: number[]
+  recipe: Recipe | null
+}>({
+  key: 'dif:current',
+  snapshot: () => ({
+    dif: dif.value ? plainDif(dif.value) : null,
+    fileName: fileName.value,
+    selectedBlocks: [...selectedBlocks.value],
+    recipe: recipe.value ? (JSON.parse(JSON.stringify(recipe.value)) as Recipe) : null,
+  }),
+  restore: (data) => {
+    dif.value = data.dif ? plainDif(data.dif) : null
+    fileName.value = data.fileName ?? ''
+    selectedBlocks.value = Array.isArray(data.selectedBlocks) ? [...data.selectedBlocks] : []
+    recipe.value = data.recipe ?? null
+  },
+  validate: (raw) => {
+    if (!raw || typeof raw !== 'object') return null
+    const data = raw as { dif?: unknown; fileName?: unknown; selectedBlocks?: unknown; recipe?: unknown }
+    if (data.dif !== null && data.dif !== undefined) {
+      const candidate = data.dif as Partial<DifFile>
+      if (!Array.isArray(candidate.blocks) || !candidate.blocks.length) return null
+    }
+    return {
+      dif: (data.dif as DifFile | null | undefined) ?? null,
+      fileName: typeof data.fileName === 'string' ? data.fileName : '',
+      selectedBlocks: Array.isArray(data.selectedBlocks)
+        ? data.selectedBlocks.filter((value): value is number => typeof value === 'number')
+        : [],
+      recipe: (data.recipe as Recipe | null | undefined) ?? null,
+    }
+  },
+})
+
+function resetAll() {
+  draft.reset()
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm('将清空已解析的 DIF、块选择、配方、导出设置和自动保存记录。确定继续？', '清空本页', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  draft.clear()
+  dif.value = null
+  fileName.value = ''
+  selectedBlocks.value = []
+  recipe.value = null
+  record.clear()
+  ElMessage.success('已清空本页')
+}
 
 const roleLabels: Record<string, string> = {
   raw: 'Raw 观测',
@@ -234,9 +333,13 @@ const drawer = ref<DrawerState>('closed')
     title="DIF 转 XY"
     subtitle="解析 Jade 拟合导出的 DIF 多曲线，合成公共网格，导出 Origin 可用的多列数据，并按配方反算坐标。"
     doc="/docs/userguide/dif-to-xy"
-    eyebrow="数据处理 · 03"
     v-model:result-state="drawer"
     result-title="Origin 多列数据"
+    :saved-at="record.savedAt ?? draft.savedAt"
+    :restored="record.restored || draft.restored"
+    :state-error="record.error || draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #run>
       <button type="button" class="btn btn--primary btn--lg" :disabled="!hasDif" @click="drawer = 'half'">

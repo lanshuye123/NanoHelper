@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -24,6 +24,7 @@ import { jadeModeDefaults, mappingSummary, type JadeMapMode } from '@/core/pipel
 import { downloadText } from '@/utils/download'
 import { useCommands } from '@/composables/useCommands'
 import type { DrawerState } from '@/components/tool/types'
+import { useToolDraft } from '@/composables/useToolDraft'
 
 const project = useProjectStore()
 const version = '0.1.0'
@@ -34,6 +35,41 @@ const decimalsX = ref(6)
 const decimalsY = ref(4)
 const lineEnding = ref<'crlf' | 'lf'>('crlf')
 const headerComments = ref(false)
+
+const draft = useToolDraft({
+  toolId: 'jade-export',
+  defaults: () => ({ decimalsX: 6, decimalsY: 4, lineEnding: 'crlf' as 'crlf' | 'lf', headerComments: false }),
+  snapshot: () => ({
+    decimalsX: decimalsX.value,
+    decimalsY: decimalsY.value,
+    lineEnding: lineEnding.value,
+    headerComments: headerComments.value,
+  }),
+  restore: (data) => {
+    decimalsX.value = data.decimalsX
+    decimalsY.value = data.decimalsY
+    lineEnding.value = data.lineEnding === 'lf' ? 'lf' : 'crlf'
+    headerComments.value = data.headerComments
+  },
+})
+
+function resetAll() {
+  draft.reset()
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm('将清空本页的导出设置和自动保存记录；当前已导入的数据不会被清除。确定继续？', '清空本页', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  draft.clear()
+  ElMessage.success('已清空本页')
+}
 
 const hasData = computed(() => project.hasData && project.derived)
 const jadeStep = computed(() => project.jadeStep)
@@ -191,9 +227,13 @@ async function copyPreview() {
     title="导出到 Jade"
     subtitle="检查 2θ 与强度范围，生成 MDI Jade 可直接读取的两列 XY，并保存可逆配方。"
     doc="/docs/userguide/jade-export"
-    eyebrow="数据处理 · 02"
     v-model:result-state="drawer"
     result-title="Jade 导出预览"
+    :saved-at="draft.savedAt"
+    :restored="draft.restored"
+    :state-error="draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #params>
       <PanelCard title="Jade 坐标映射" :icon="Wand2">

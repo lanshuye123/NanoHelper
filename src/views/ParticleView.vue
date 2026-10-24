@@ -47,6 +47,8 @@ import {
   type ParticleMeasurement,
 } from '@/core/micro/particles'
 import { downloadText, safeFilename, timestamp } from '@/utils/download'
+import { useToolDraft } from '@/composables/useToolDraft'
+import { useToolRecord } from '@/composables/useToolRecord'
 
 const drawer = ref<DrawerState>('closed')
 const resultTabs: ResultTab[] = ['text', 'download', 'copy']
@@ -55,6 +57,7 @@ const canvasRef = ref<InstanceType<typeof ParticleCanvas> | null>(null)
 const histogramRef = ref<InstanceType<typeof ParticleHistogram> | null>(null)
 
 const image = ref<HTMLImageElement | null>(null)
+const imageBlob = ref<Blob | null>(null)
 const imageUrl = ref('')
 const imageName = ref('')
 const imageBytes = ref(0)
@@ -88,6 +91,173 @@ const labelColor = ref('#dc2626')
 const focusMode = ref(false)
 const focusCanvasHeight = ref(560)
 const workspaceRef = ref<HTMLElement | null>(null)
+
+const draft = useToolDraft({
+  toolId: 'particles',
+  defaults: () => ({
+    scaleLength: 500,
+    scaleUnit: 'nm' as LengthUnit,
+    invert: false,
+    thresholdMode: 'auto' as 'auto' | 'manual',
+    manualThreshold: 128,
+    minArea: 20,
+    maxCircularity: 2.5,
+    unit: 'nm' as LengthUnit,
+    binCount: 10,
+    showLabels: true,
+    showDetections: true,
+    labelColor: '#dc2626',
+  }),
+  snapshot: () => ({
+    scaleLength: scaleLength.value,
+    scaleUnit: scaleUnit.value,
+    invert: invert.value,
+    thresholdMode: thresholdMode.value,
+    manualThreshold: manualThreshold.value,
+    minArea: minArea.value,
+    maxCircularity: maxCircularity.value,
+    unit: unit.value,
+    binCount: binCount.value,
+    showLabels: showLabels.value,
+    showDetections: showDetections.value,
+    labelColor: labelColor.value,
+  }),
+  restore: (data) => {
+    scaleLength.value = data.scaleLength
+    scaleUnit.value = data.scaleUnit === 'um' || data.scaleUnit === 'mm' ? data.scaleUnit : 'nm'
+    invert.value = data.invert
+    thresholdMode.value = data.thresholdMode === 'manual' ? 'manual' : 'auto'
+    manualThreshold.value = data.manualThreshold
+    minArea.value = data.minArea
+    maxCircularity.value = data.maxCircularity
+    unit.value = data.unit === 'um' || data.unit === 'mm' ? data.unit : 'nm'
+    binCount.value = data.binCount
+    showLabels.value = data.showLabels
+    showDetections.value = data.showDetections
+    labelColor.value = data.labelColor
+  },
+})
+
+interface ParticleRecord {
+  imageBlob: Blob | null
+  imageName: string
+  imageBytes: number
+  calibration: Calibration | null
+  calibrationLine: ImageLine | null
+  measurements: ParticleMeasurement[]
+  detections: DetectedParticle[] | null
+  detectInfo: string
+  detectWarnings: string[]
+  mode: 'calibrate' | 'measure' | 'pan'
+}
+
+function plainRecord(): ParticleRecord {
+  return {
+    imageBlob: imageBlob.value,
+    imageName: imageName.value,
+    imageBytes: imageBytes.value,
+    calibration: calibration.value ? { ...calibration.value } : null,
+    calibrationLine: calibrationLine.value ? { ...calibrationLine.value } : null,
+    measurements: measurements.value.map((measurement) => ({ ...measurement })),
+    detections: detections.value ? detections.value.map((particle) => ({ ...particle })) : null,
+    detectInfo: detectInfo.value,
+    detectWarnings: [...detectWarnings.value],
+    mode: mode.value,
+  }
+}
+
+async function restoreRecord(data: ParticleRecord) {
+  if (data.imageBlob instanceof Blob) {
+    const url = URL.createObjectURL(data.imageBlob)
+    try {
+      const img = await loadImage(url)
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+      objectUrl = url
+      image.value = img
+      imageBlob.value = data.imageBlob
+      imageUrl.value = url
+      imageName.value = data.imageName || '已恢复的图像'
+      imageBytes.value = data.imageBytes || data.imageBlob.size
+    } catch {
+      URL.revokeObjectURL(url)
+      image.value = null
+      imageBlob.value = null
+      imageUrl.value = ''
+      imageName.value = ''
+      imageBytes.value = 0
+    }
+  } else {
+    image.value = null
+    imageBlob.value = null
+    imageUrl.value = ''
+    imageName.value = ''
+    imageBytes.value = 0
+  }
+  calibration.value = data.calibration ? { ...data.calibration } : null
+  calibrationLine.value = data.calibrationLine ? { ...data.calibrationLine } : null
+  measurements.value = Array.isArray(data.measurements)
+    ? data.measurements.map((measurement) => ({ ...measurement }))
+    : []
+  detections.value = Array.isArray(data.detections) ? data.detections.map((particle) => ({ ...particle })) : null
+  detectInfo.value = data.detectInfo ?? ''
+  detectWarnings.value = Array.isArray(data.detectWarnings) ? [...data.detectWarnings] : []
+  mode.value = data.mode === 'measure' && calibration.value ? 'measure' : data.mode === 'pan' ? 'pan' : 'calibrate'
+  selectedId.value = null
+  pendingLine.value = null
+}
+
+const record = useToolRecord<ParticleRecord>({
+  key: 'particles:current',
+  snapshot: plainRecord,
+  restore: restoreRecord,
+  validate: (raw) => {
+    if (!raw || typeof raw !== 'object') return null
+    const data = raw as Partial<ParticleRecord>
+    if (data.imageBlob !== null && data.imageBlob !== undefined && !(data.imageBlob instanceof Blob)) return null
+    if (!Array.isArray(data.measurements)) return null
+    return {
+      imageBlob: (data.imageBlob as Blob | null | undefined) ?? null,
+      imageName: typeof data.imageName === 'string' ? data.imageName : '',
+      imageBytes: typeof data.imageBytes === 'number' ? data.imageBytes : 0,
+      calibration: (data.calibration as Calibration | null | undefined) ?? null,
+      calibrationLine: (data.calibrationLine as ImageLine | null | undefined) ?? null,
+      measurements: data.measurements as ParticleMeasurement[],
+      detections: Array.isArray(data.detections) ? (data.detections as DetectedParticle[]) : null,
+      detectInfo: typeof data.detectInfo === 'string' ? data.detectInfo : '',
+      detectWarnings: Array.isArray(data.detectWarnings) ? (data.detectWarnings as string[]) : [],
+      mode: data.mode === 'measure' || data.mode === 'pan' ? data.mode : 'calibrate',
+    }
+  },
+})
+
+function resetAll() {
+  draft.reset()
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm(
+      '将清空已载入的图像、标尺、全部测量记录、自动识别结果和自动保存记录。确定继续？',
+      '清空本页',
+      { confirmButtonText: '清空', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return
+  }
+  clearWorkspace()
+  if (objectUrl) URL.revokeObjectURL(objectUrl)
+  objectUrl = ''
+  image.value = null
+  imageBlob.value = null
+  imageUrl.value = ''
+  imageName.value = ''
+  imageBytes.value = 0
+  measurements.value = []
+  detections.value = null
+  draft.clear()
+  record.clear()
+  ElMessage.success('已清空本页')
+}
 
 let idCounter = 0
 let objectUrl = ''
@@ -192,7 +362,7 @@ async function loadFile(file: File) {
   try {
     const url = URL.createObjectURL(file)
     const img = await loadImage(url)
-    adoptImage(img, url, file.name, file.size)
+    adoptImage(img, url, file.name, file.size, file)
     ElMessage.success('图像已载入，请先标定标尺')
   } catch {
     ElMessage.error('图片无法打开；TIFF 等格式请先转换为 PNG 或 JPEG')
@@ -208,10 +378,11 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
-function adoptImage(img: HTMLImageElement, url: string, name: string, bytes: number) {
+function adoptImage(img: HTMLImageElement, url: string, name: string, bytes: number, blob: Blob | null = null) {
   if (objectUrl) URL.revokeObjectURL(objectUrl)
   objectUrl = url
   image.value = img
+  imageBlob.value = blob
   imageUrl.value = url
   imageName.value = name
   imageBytes.value = bytes
@@ -544,7 +715,7 @@ function loadDemo() {
     if (!blob) return
     const url = URL.createObjectURL(blob)
     void loadImage(url).then((img) => {
-      adoptImage(img, url, '示例图像.png', blob.size)
+      adoptImage(img, url, '示例图像.png', blob.size, blob)
       const line = { x1: 60, y1: 700, x2: 260, y2: 700, lengthPx: 200 }
       pendingLine.value = line
       calibrationLine.value = { x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2 }
@@ -652,11 +823,15 @@ onBeforeUnmount(() => {
     tool-id="particles"
     title="颗粒尺寸测量"
     subtitle="类 NanoMeasure 的 SEM/TEM 粒径工作流：先用图像标尺标定比例，再逐颗画线测量或自动识别，实时统计并导出 CSV / TXT / PNG。"
-    eyebrow="显微分析 · 01"
     doc="/docs/userguide/particles"
     v-model:result-state="drawer"
     result-title="测量报告与导出"
     :result-tabs="resultTabs"
+    :saved-at="record.savedAt ?? draft.savedAt"
+    :restored="record.restored || draft.restored"
+    :state-error="record.error || draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #run>
       <button type="button" class="btn btn--primary btn--lg" :disabled="!measurements.length" @click="drawer = 'half'">
@@ -872,7 +1047,7 @@ onBeforeUnmount(() => {
           <li>标尺线越短，比例误差越大；建议覆盖整条标尺并尽量水平/垂直。</li>
           <li>更改标尺后会按像素长度重算已有测量；更换图像会清空当前测量。</li>
           <li>统计默认采用 NanoMeasure 的上偏分组：2.5 落在 2.5–3.0 组。</li>
-          <li>测量结果不会自动保存；离开页面前请导出需要的数据。</li>
+          <li>测量结果会自动保存；更换设备前建议导出 CSV/TXT 备份。</li>
         </ul>
       </PanelCard>
     </template>

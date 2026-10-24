@@ -19,6 +19,12 @@ npm run build        # 类型检查 + 生产构建
 | `tests/pipeline.spec.ts` | Jade 映射往返、步骤链、逆变换、校验、XY 解析/导出、SNIP、SG、Kα2 |
 | `tests/dif.spec.ts` | DEMO06 六块解析、点数、X 轴、宽表/堆叠/差值导出 |
 | `tests/diffraction.spec.ts` | Si/锐钛矿 XRD 峰位、多重度、SAED 斑点、Scherrer、W–H |
+| `tests/ewald.spec.ts` | 艾瓦德球半径、ZOLZ/HOLZ、激发误差、X 射线/电子曲率对比 |
+| `tests/saedRings.spec.ts` | Si 多晶环顺序、环半径、实测环指标化与 Lλ 反算、晶粒展宽 |
+| `tests/symmetry.spec.ts` | Fd-3m/P21/P-1 手性、特殊位置、等效位置数 |
+| `tests/persist.spec.ts` | 默认值合并、版本化记录、损坏 JSON 容错、保存时间格式 |
+| `tests/toolDraft.spec.ts` | 自动恢复、卸载保存、恢复默认、清空记录、损坏记录回退 |
+| `tests/tool-state-coverage.spec.ts` | 每个交互工具页都接入自动保存/恢复默认/清空本页 |
 
 固定装置：`tests/fixtures/DEMO06.dif`（真实 Jade 导出）。
 
@@ -53,6 +59,12 @@ it('round-trips the Jade mapping', () => {
 - [ ] XRD → Si → 111/220/311/400 峰位；
 - [ ] 结构 → 导入 NaCl CIF → 8 原子、密度 2.16；
 - [ ] 文档 → 每篇可打开、目录/上下篇/搜索正常；
+- [ ] 任一工具改参数 → 切页 → 返回，输入仍在；
+- [ ] 刷新页面后，谱图/图像/测量记录能恢复；
+- [ ] 「恢复默认」保留数据；「清空本页」后重新进入为默认状态；
+- [ ] 艾瓦德球 → Si [110] → 切换电子/X 射线，曲率比明显变化；
+- [ ] 多晶环 → Si → 111/220/400 环位置与 d 值一致；
+- [ ] 对称性 → P -1 非手性、P 21 手性、Fd-3m 一般位置数 192；
 - [ ] 浅色主题、1600/1280/800 px 宽度；
 - [ ] 控制台无错误。
 

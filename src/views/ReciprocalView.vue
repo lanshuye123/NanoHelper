@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Calculator, Grid3x3, Info, Ruler, ScanLine, Sparkles } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
 import type { DrawerState } from '@/components/tool/types'
@@ -24,6 +24,7 @@ import { formatHkl } from '@/core/math/vec'
 import { STRUCTURE_PRESETS } from '@/data/presets'
 import { getSpaceGroupMeta } from '@/core/data/spacegroups'
 import { useStructureStore } from '@/stores/structure'
+import { useToolDraft } from '@/composables/useToolDraft'
 
 const router = useRouter()
 const structureStore = useStructureStore()
@@ -43,6 +44,72 @@ const dirB = reactive({ u: 1, v: 1, w: 1 })
 const zoneInput = reactive({ u: 1, v: 1, w: 0 })
 const selected = ref<[number, number, number] | null>(null)
 let nextTarget: 'A' | 'B' = 'A'
+
+const draft = useToolDraft({
+  toolId: 'reciprocal',
+  defaults: () => ({
+    cell: { ...STRUCTURE_PRESETS[0].cell },
+    presetId: STRUCTURE_PRESETS[0].id as string | null,
+    latticeType: 'P',
+    maxIndex: 6,
+    applyCentering: true,
+    filterText: '',
+    maxG: 1.0,
+    planeA: { h: 1, k: 0, l: 0 },
+    planeB: { h: 1, k: 1, l: 1 },
+    dirA: { u: 1, v: 0, w: 0 },
+    dirB: { u: 1, v: 1, w: 1 },
+    zoneInput: { u: 1, v: 1, w: 0 },
+  }),
+  snapshot: () => ({
+    cell: { ...cell },
+    presetId: presetId.value,
+    latticeType: latticeType.value,
+    maxIndex: maxIndex.value,
+    applyCentering: applyCentering.value,
+    filterText: filterText.value,
+    maxG: maxG.value,
+    planeA: { ...planeA },
+    planeB: { ...planeB },
+    dirA: { ...dirA },
+    dirB: { ...dirB },
+    zoneInput: { ...zoneInput },
+  }),
+  restore: (data) => {
+    Object.assign(cell, data.cell)
+    presetId.value = data.presetId
+    latticeType.value = data.latticeType
+    maxIndex.value = data.maxIndex
+    applyCentering.value = data.applyCentering
+    filterText.value = data.filterText
+    maxG.value = data.maxG
+    Object.assign(planeA, data.planeA)
+    Object.assign(planeB, data.planeB)
+    Object.assign(dirA, data.dirA)
+    Object.assign(dirB, data.dirB)
+    Object.assign(zoneInput, data.zoneInput)
+  },
+})
+
+function resetAll() {
+  draft.reset()
+  selected.value = null
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm('将清空本页晶胞、晶面/晶向指数、带轴与自动保存记录；不会重置其他页面共用的晶体结构。确定继续？', '清空本页', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  draft.clear()
+  selected.value = null
+  ElMessage.success('已清空本页')
+}
 
 watch(
   cell,
@@ -294,9 +361,13 @@ const drawer = ref<DrawerState>('closed')
     title="倒易空间计算"
     subtitle="从六个晶格参数出发，计算 d 值、晶面/晶向夹角、晶带轴与二维倒易面，并直接送入 SAED 模拟。"
     doc="/docs/userguide/reciprocal"
-    eyebrow="晶体几何 · 01"
     v-model:result-state="drawer"
     result-title="计算结果"
+    :saved-at="draft.savedAt"
+    :restored="draft.restored"
+    :state-error="draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #run>
       <button type="button" class="btn btn--primary btn--lg" @click="drawer = 'half'">查看计算结果</button>

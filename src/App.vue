@@ -1,16 +1,22 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import CommandPalette from '@/components/layout/CommandPalette.vue'
 import StatusBar from '@/components/layout/StatusBar.vue'
 import { useSettingsStore } from '@/stores/settings'
+import { useProjectStore } from '@/stores/project'
 
 const route = useRoute()
 const settings = useSettingsStore()
+const project = useProjectStore()
 /** The home page uses the full canvas; tools and docs get the module sidebar. */
 const isHome = computed(() => route.path === '/' || route.meta.module === 'home')
+
+onMounted(() => {
+  void project.restorePersisted()
+})
 
 watch(
   () => route.fullPath,

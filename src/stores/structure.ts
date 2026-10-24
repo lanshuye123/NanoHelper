@@ -3,12 +3,58 @@ import { defineStore } from 'pinia'
 import { presetToStructure } from '@/data/presets'
 import { STRUCTURE_PRESETS } from '@/data/presets'
 import type { Structure } from '@/core/crystallography/structure'
+import { readStored, writeStored } from '@/utils/persist'
+
+const STRUCTURE_KEY = 'ctb.structure.current'
+const STRUCTURE_VERSION = 1
+
+interface StructureSnapshot {
+  current: Structure
+  label: string
+  presetId: string | null
+  warnings: string[]
+}
+
+function isValidSnapshot(value: unknown): value is StructureSnapshot {
+  if (!value || typeof value !== 'object') return false
+  const snapshot = value as Partial<StructureSnapshot>
+  if (!snapshot.current || typeof snapshot.current !== 'object') return false
+  if (!snapshot.current.cell || !Array.isArray(snapshot.current.atoms)) return false
+  if (typeof snapshot.label !== 'string') return false
+  return true
+}
 
 export const useStructureStore = defineStore('structure', () => {
-  const current = ref<Structure>(presetToStructure(STRUCTURE_PRESETS[0]))
-  const label = ref(`${STRUCTURE_PRESETS[0].name} (${STRUCTURE_PRESETS[0].formula})`)
-  const presetId = ref<string | null>(STRUCTURE_PRESETS[0].id)
-  const warnings = ref<string[]>([])
+  const stored = readStored<unknown>(STRUCTURE_KEY, STRUCTURE_VERSION)
+  const initial = stored && isValidSnapshot(stored.data) ? stored.data : null
+
+  const current = ref<Structure>(initial?.current ?? presetToStructure(STRUCTURE_PRESETS[0]))
+  const label = ref(initial?.label ?? `${STRUCTURE_PRESETS[0].name} (${STRUCTURE_PRESETS[0].formula})`)
+  const presetId = ref<string | null>(initial ? initial.presetId : STRUCTURE_PRESETS[0].id)
+  const warnings = ref<string[]>(initial?.warnings ?? [])
+  const savedAt = ref<number | null>(stored?.savedAt ?? null)
+  const restored = ref(Boolean(initial))
+
+  let saveTimer: ReturnType<typeof setTimeout> | null = null
+
+  function saveNow() {
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+    const ok = writeStored<StructureSnapshot>(STRUCTURE_KEY, STRUCTURE_VERSION, {
+      current: current.value,
+      label: label.value,
+      presetId: presetId.value,
+      warnings: warnings.value,
+    })
+    if (ok) savedAt.value = Date.now()
+  }
+
+  function scheduleSave() {
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = setTimeout(saveNow, 450)
+  }
 
   const atomCount = computed(() => current.value.atoms.length)
   const elements = computed(() => {
@@ -37,6 +83,11 @@ export const useStructureStore = defineStore('structure', () => {
     warnings.value = []
   }
 
+  function resetToDefault() {
+    loadPreset(STRUCTURE_PRESETS[0].id)
+    restored.value = false
+  }
+
   watch(
     () => current.value.cell,
     () => {
@@ -51,5 +102,19 @@ export const useStructureStore = defineStore('structure', () => {
     { deep: true },
   )
 
-  return { current, label, presetId, warnings, atomCount, elements, setStructure, loadPreset }
+  watch([current, label, presetId, warnings], scheduleSave, { deep: true })
+
+  return {
+    current,
+    label,
+    presetId,
+    warnings,
+    savedAt,
+    restored,
+    atomCount,
+    elements,
+    setStructure,
+    loadPreset,
+    resetToDefault,
+  }
 })

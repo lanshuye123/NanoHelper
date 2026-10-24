@@ -33,6 +33,7 @@ import { ANODES } from '@/core/diffraction/scattering'
 import { applyMapping, jadeModeDefaults } from '@/core/pipeline/jade'
 import { downloadText, readFileText, safeFilename } from '@/utils/download'
 import { useCommands } from '@/composables/useCommands'
+import { useToolDraft } from '@/composables/useToolDraft'
 import SparkLine from '@/components/ui/SparkLine.vue'
 import type { DrawerState } from '@/components/tool/types'
 
@@ -50,6 +51,57 @@ const pasteOpen = ref(false)
 const pasteText = ref('')
 const importing = ref(false)
 const projectInput = ref<HTMLInputElement | null>(null)
+
+const draft = useToolDraft({
+  toolId: 'data-import',
+  defaults: () => ({ xCol: 0, yCol: 1 }),
+  snapshot: () => ({ xCol: xCol.value, yCol: yCol.value }),
+  restore: (data) => {
+    xCol.value = Math.max(0, Math.round(data.xCol))
+    yCol.value = Math.max(0, Math.round(data.yCol))
+  },
+})
+
+function resetAll() {
+  draft.reset()
+  pending.value = null
+  inlineError.value = ''
+}
+
+async function clearData() {
+  try {
+    await ElMessageBox.confirm('将清空当前数据与全部处理步骤；Jade 导出、DIF 等页面也会失去当前数据。确定继续？', '清空数据', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  project.clear()
+  pending.value = null
+  inlineError.value = ''
+  ElMessage.success('已清空当前数据')
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm(
+      '将清空当前数据、处理步骤、列映射和本页自动保存记录；Jade 导出、DIF 等页面也会失去当前数据。确定继续？',
+      '清空本页',
+      { confirmButtonText: '清空', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return
+  }
+  project.clear()
+  draft.clear()
+  pending.value = null
+  pasteText.value = ''
+  pasteOpen.value = false
+  inlineError.value = ''
+  ElMessage.success('已清空本页')
+}
 
 const hasData = computed(() => project.hasData && project.derived)
 const steps = computed(() => project.steps)
@@ -335,14 +387,19 @@ async function openProject(files: File[]) {
 </script>
 
 <template>
-  <ToolPage
+  <div class="tool-root">
+    <ToolPage
     tool-id="data-import"
     title="XRD 数据预处理"
     subtitle="导入谱图，裁剪、平滑、扣背底，再导出 Jade 可读的两列 XY。"
     doc="/docs/userguide/data-import"
-    eyebrow="数据处理 · 01"
     v-model:result-state="drawer"
     result-title="预处理结果"
+    :saved-at="Math.max(draft.savedAt ?? 0, project.persistedAt ?? 0) || null"
+    :restored="draft.restored || project.restoredFromStorage"
+    :state-error="draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <!-- 1 · 数据输入 -->
     <template #source>
@@ -510,7 +567,7 @@ async function openProject(files: File[]) {
         <button type="button" class="btn btn--quiet" :disabled="!steps.length" @click="resetSteps">
           <RotateCcw /> 重置步骤
         </button>
-        <button type="button" class="btn btn--quiet" :disabled="!project.hasData" @click="project.clear()">
+        <button type="button" class="btn btn--quiet" :disabled="!project.hasData" @click="clearData">
           清空数据
         </button>
       </div>
@@ -649,6 +706,7 @@ async function openProject(files: File[]) {
       <el-button size="small" type="primary" @click="pasteImport">导入</el-button>
     </template>
   </el-dialog>
+  </div>
 </template>
 
 <style scoped>

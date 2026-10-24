@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Atom, Camera, Copy, Download, Grid3x3, Info, Ruler, ScanLine, Sparkles } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
 import type { DrawerState, ResultTab } from '@/components/tool/types'
@@ -26,6 +26,7 @@ import {
   type SingleSpotCandidate,
 } from '@/core/micro/saedIndex'
 import { downloadText, safeFilename, timestamp } from '@/utils/download'
+import { useToolDraft } from '@/composables/useToolDraft'
 
 const store = useStructureStore()
 const drawer = ref<DrawerState>('closed')
@@ -57,6 +58,105 @@ const candidates = ref<IndexCandidate[]>([])
 const selectedIndex = ref(0)
 const runError = ref('')
 const hasRun = ref(false)
+
+const draft = useToolDraft({
+  toolId: 'saed-index',
+  defaults: () => ({
+    sourceMode: 'preset' as 'preset' | 'manual',
+    presetId: STRUCTURE_PRESETS[0].id,
+    cell: { ...STRUCTURE_PRESETS[0].cell },
+    sgNumber: STRUCTURE_PRESETS[0].spaceGroupNumber ?? 225,
+    measureMode: 'R' as 'R' | 'd',
+    voltageKv: 200,
+    cameraLengthMm: 800,
+    cameraConstant: 0,
+    r1: 6.398,
+    r2: 10.449,
+    d1Input: 2.5,
+    d2Input: 2.5,
+    angleDeg: 35.264,
+    dTolerancePercent: 3,
+    angleTolerance: 3,
+    maxIndex: 5,
+    knownR: 10,
+    knownD: 2.355,
+    candidates: [] as IndexCandidate[],
+    selectedIndex: 0,
+    hasRun: false,
+  }),
+  snapshot: () => ({
+    sourceMode: sourceMode.value,
+    presetId: presetId.value,
+    cell: { ...cell },
+    sgNumber: sgNumber.value,
+    measureMode: measureMode.value,
+    voltageKv: voltageKv.value,
+    cameraLengthMm: cameraLengthMm.value,
+    cameraConstant: cameraConstant.value,
+    r1: r1.value,
+    r2: r2.value,
+    d1Input: d1Input.value,
+    d2Input: d2Input.value,
+    angleDeg: angleDeg.value,
+    dTolerancePercent: dTolerancePercent.value,
+    angleTolerance: angleTolerance.value,
+    maxIndex: maxIndex.value,
+    knownR: knownR.value,
+    knownD: knownD.value,
+    candidates: candidates.value.map((candidate) => ({ ...candidate })),
+    selectedIndex: selectedIndex.value,
+    hasRun: hasRun.value,
+  }),
+  restore: (data) => {
+    sourceMode.value = data.sourceMode === 'manual' ? 'manual' : 'preset'
+    presetId.value = data.presetId
+    Object.assign(cell, data.cell)
+    sgNumber.value = data.sgNumber
+    measureMode.value = data.measureMode === 'd' ? 'd' : 'R'
+    voltageKv.value = data.voltageKv
+    cameraLengthMm.value = data.cameraLengthMm
+    cameraConstant.value = data.cameraConstant
+    r1.value = data.r1
+    r2.value = data.r2
+    d1Input.value = data.d1Input
+    d2Input.value = data.d2Input
+    angleDeg.value = data.angleDeg
+    dTolerancePercent.value = data.dTolerancePercent
+    angleTolerance.value = data.angleTolerance
+    maxIndex.value = data.maxIndex
+    knownR.value = data.knownR
+    knownD.value = data.knownD
+    candidates.value = Array.isArray(data.candidates) ? data.candidates.map((candidate) => ({ ...candidate })) : []
+    selectedIndex.value = Math.max(0, Math.round(data.selectedIndex))
+    hasRun.value = Boolean(data.hasRun)
+  },
+})
+
+function resetAll() {
+  draft.reset()
+  candidates.value = []
+  selectedIndex.value = 0
+  hasRun.value = false
+  runError.value = ''
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm('将清空本页的晶胞、衍射条件、实测斑点、候选结果和自动保存记录；不会重置其他页面共用的晶体结构。确定继续？', '清空本页', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  draft.clear()
+  candidates.value = []
+  selectedIndex.value = 0
+  hasRun.value = false
+  runError.value = ''
+  ElMessage.success('已清空本页')
+}
 
 watch(
   voltageKv,
@@ -321,11 +421,15 @@ async function copyReport() {
     tool-id="saed-index"
     title="SAED 指标化"
     subtitle="从实验电子衍射图上量取两个斑点的 R 与夹角，反算 d 值并枚举满足晶带关系的 (hkl)₁/(hkl)₂ 与带轴，自动检查系统消光。"
-    eyebrow="显微分析 · 03"
     doc="/docs/userguide/saed-index"
     v-model:result-state="drawer"
     result-title="SAED 指标化结果"
     :result-tabs="resultTabs"
+    :saved-at="draft.savedAt"
+    :restored="draft.restored"
+    :state-error="draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #run>
       <button type="button" class="btn btn--primary btn--lg" @click="runIndex"><ScanLine /> 开始指标化</button>

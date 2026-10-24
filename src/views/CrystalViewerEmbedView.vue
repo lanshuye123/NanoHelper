@@ -34,8 +34,8 @@ async function fullscreen() {
     tool-id="crystal-viewer"
     title="三维晶胞查看器"
     subtitle="输入空间群编号或符号，查看三维晶胞、Wyckoff 位置与原子点位。可全屏或在新窗口打开，方便对照。"
-    eyebrow="晶体几何 · 06"
     doc="/docs/userguide/crystal-viewer"
+    :show-state-actions="false"
   >
     <template #source>
       <PanelCard title="使用提示" :icon="Box">

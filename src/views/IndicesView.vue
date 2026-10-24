@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeftRight, Atom, Compass, Copy, Download, Grid3x3, Layers, Ruler } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
 import type { DrawerState, ResultTab } from '@/components/tool/types'
@@ -33,6 +33,7 @@ import { getSpaceGroupMeta, loadSpaceGroup, toSymOps } from '@/core/data/spacegr
 import type { SymOp } from '@/core/crystallography/symmetry'
 import { normalizeZone, planesInZone } from '@/core/lattice/zone'
 import { useStructureStore } from '@/stores/structure'
+import { useToolDraft } from '@/composables/useToolDraft'
 import { downloadText, safeFilename, timestamp } from '@/utils/download'
 
 const store = useStructureStore()
@@ -49,6 +50,58 @@ const zoneInput = reactive({ u: 1, v: 1, w: 0 })
 const sgNumber = ref<number>(store.current.spaceGroupNumber ?? 225)
 const ops = ref<SymOp[]>([])
 const sgError = ref('')
+
+const draft = useToolDraft({
+  toolId: 'indices',
+  defaults: () => ({
+    cell: { ...STRUCTURE_PRESETS[0].cell },
+    presetId: STRUCTURE_PRESETS[0].id,
+    planeA: { h: 1, k: 1, l: 0 },
+    planeB: { h: 1, k: 0, l: 0 },
+    dirA: { u: 1, v: 0, w: 0 },
+    dirB: { u: 1, v: 1, w: 0 },
+    zoneInput: { u: 1, v: 1, w: 0 },
+    sgNumber: store.current.spaceGroupNumber ?? 225,
+  }),
+  snapshot: () => ({
+    cell: { ...cell },
+    presetId: presetId.value,
+    planeA: { ...planeA },
+    planeB: { ...planeB },
+    dirA: { ...dirA },
+    dirB: { ...dirB },
+    zoneInput: { ...zoneInput },
+    sgNumber: sgNumber.value,
+  }),
+  restore: (data) => {
+    Object.assign(cell, data.cell)
+    presetId.value = data.presetId
+    Object.assign(planeA, data.planeA)
+    Object.assign(planeB, data.planeB)
+    Object.assign(dirA, data.dirA)
+    Object.assign(dirB, data.dirB)
+    Object.assign(zoneInput, data.zoneInput)
+    sgNumber.value = data.sgNumber
+  },
+})
+
+function resetAll() {
+  draft.reset()
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm('将清空本页晶胞、晶面/晶向、带轴与空间群选择，并移除自动保存记录；不会重置其他页面共用的晶体结构。确定继续？', '清空本页', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  draft.clear()
+  ElMessage.success('已清空本页')
+}
 
 watch(
   () => store.current.spaceGroupNumber,
@@ -286,11 +339,15 @@ async function copyReport() {
     tool-id="indices"
     title="晶面与晶向"
     subtitle="Miller 指数、四指数换算、d 值、晶面/晶向夹角、晶带轴与 Weiss 定律，并直接检查空间群系统消光。"
-    eyebrow="晶体几何 · 04"
     doc="/docs/userguide/indices"
     v-model:result-state="drawer"
     result-title="晶面与晶向计算"
     :result-tabs="resultTabs"
+    :saved-at="draft.savedAt"
+    :restored="draft.restored"
+    :state-error="draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #run>
       <button type="button" class="btn btn--primary btn--lg" @click="drawer = 'half'">查看计算报告</button>

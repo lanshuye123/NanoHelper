@@ -40,6 +40,9 @@
 | 颗粒统计    | SEM/TEM 标尺、Feret/面积等效圆、自动识别、全屏测量、直方图、Gaussian/Log-normal、CSV/TXT/PNG     |
 | SAED 指标化 | 由 R/夹角反算 d、枚举 hkl 与带轴、消光检查、候选叠加图                                           |
 | 电镜参数    | 电子波长、瑞利分辨率、CTF、景深、相干长度、像差、磁透镜焦距、亮度、相机常数                      |
+| 艾瓦德球    | 倒易点阵、艾瓦德球、ZOLZ/HOLZ、激发误差、厚度与倒易杆、电子/X 射线对比                            |
+| 多晶衍射环  | 多晶 SAED 环、hkl/多重度/强度、实测环指标化、相机常数反算                                         |
+| 对称性      | 空间群一般位置、等效位置、反射条件、系统消光、手性                                                |
 
 ## 技术栈
 
@@ -64,6 +67,7 @@ npx serve dist
 ## 文档
 
 - [用户指南](docs/userguide/getting-started.md)
+- [艾瓦德球](docs/userguide/ewald.md)、[多晶衍射环](docs/userguide/saed-rings.md)、[对称性](docs/userguide/symmetry.md)
 - [实战手册](docs/cookbook/raman-to-jade.md)
 - [功能说明](docs/reference/tools.md)
 - [文件格式](docs/reference/file-formats.md)
@@ -131,7 +135,7 @@ npx serve dist
 - 不做 Rietveld、结构解析；晶格精修只做峰位；
 - 颗粒自动识别不做分水岭，粘连颗粒会合并；
 - 不解析二进制厂商格式（`.brml`/`.raw`/`.mdi`）；
-- 工程文件不包含晶体结构；不做自动持久化。
+- 工程文件不包含晶体结构；自动保存仅限本机，跨设备请导出工程文件。
 
 ## 许可
 

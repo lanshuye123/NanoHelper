@@ -505,3 +505,82 @@ $$
 $$
 N_{\text{bin}}=n\int_{d_{\text{low}}}^{d_{\text{high}}}p(d)\,\mathrm dd
 $$
+
+## 19. 艾瓦德球与劳厄带
+
+晶体学约定下艾瓦德球半径为
+
+$$
+k=\frac{1}{\lambda}
+$$
+
+径向截面内球面满足
+
+$$
+r^2+(z+k)^2=k^2
+$$
+
+倒易点到球面的有符号激发误差为
+
+$$
+s=\frac{x^2+y^2+z^2+2kz}{2k}
+$$
+
+劳厄带指数为
+
+$$
+N=hu+kv+lw
+$$
+
+相邻劳厄带的间距为
+
+$$
+\Delta z=\frac{1}{|\vec R_{uvw}|}
+$$
+
+有限厚度 $t$ 的倒易杆半长为 $1/(2t)$；$|s|$ 小于该值时按“相截”处理。
+
+## 20. 多晶电子衍射环
+
+环半径：
+
+$$
+R=L\lambda\,|g|=\frac{L\lambda}{d}
+$$
+
+环强度：
+
+$$
+I\propto\sum m\,|F(hkl)|^2
+$$
+
+同一 d 组的等效反射合并；多重度 $m$ 由 Laue 类的旋转操作给出。
+
+Scherrer 展宽：
+
+$$
+\beta=\frac{K\lambda}{D\cos\theta}
+$$
+
+## 21. 空间群消光
+
+一般位置结构因子：
+
+$$
+F_{gen}(hkl)=\sum_{j=1}^{N_{ops}} e^{2\pi i(hx_j+ky_j+lz_j)}
+$$
+
+$|F_{gen}|\approx0$ 即系统消光。点阵消光条件：
+
+$$
+\begin{aligned}
+I &: h+k+l=2n\\
+F &: h,k,l\ \text{全奇或全偶}\\
+C &: h+k=2n\\
+A &: k+l=2n\\
+B &: h+l=2n\\
+R &: -h+k+l=3n
+\end{aligned}
+$$
+
+手性：若全部对称操作的旋转部分行列式均为 $+1$（只含旋转轴与螺旋轴），则空间群为手性空间群。

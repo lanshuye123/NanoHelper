@@ -2,6 +2,8 @@
 import { computed, useSlots } from 'vue'
 import { BookOpen } from 'lucide-vue-next'
 import ResultDrawer from '@/components/tool/ResultDrawer.vue'
+import ToolStateActions from '@/components/layout/ToolStateActions.vue'
+import { TOOL_GROUPS, tools } from '@/tools/registry'
 import type { DrawerState, ResultTab } from '@/components/tool/types'
 
 const props = withDefaults(
@@ -9,11 +11,17 @@ const props = withDefaults(
     toolId: string
     title: string
     subtitle?: string
+    /** Optional override; otherwise derived from the tool registry. */
     eyebrow?: string
     doc?: string
     resultTitle?: string
     resultTabs?: ResultTab[]
     busy?: boolean
+    savedAt?: number | null
+    restored?: boolean
+    stateError?: string
+    showStateActions?: boolean
+    canClear?: boolean
   }>(),
   {
     subtitle: '',
@@ -22,8 +30,15 @@ const props = withDefaults(
     resultTitle: '结果',
     resultTabs: () => ['chart', 'text', 'download', 'copy'] as ResultTab[],
     busy: false,
+    savedAt: null,
+    restored: false,
+    stateError: '',
+    showStateActions: true,
+    canClear: true,
   },
 )
+
+const emit = defineEmits<{ reset: []; clear: [] }>()
 
 const drawerState = defineModel<DrawerState>('resultState', { default: 'closed' })
 
@@ -31,6 +46,15 @@ const slots = useSlots()
 
 const hasConfig = computed(() => Boolean(slots.source || slots.config || slots.params || slots.more))
 const hasAside = computed(() => Boolean(slots.aside))
+
+const eyebrowText = computed(() => {
+  if (props.eyebrow) return props.eyebrow
+  const meta = tools.find((tool) => tool.id === props.toolId)
+  if (!meta) return ''
+  const group = TOOL_GROUPS.find((item) => item.key === meta.group)
+  const index = tools.filter((tool) => tool.group === meta.group).findIndex((tool) => tool.id === meta.id)
+  return `${group?.label ?? ''} · ${String(index + 1).padStart(2, '0')}`
+})
 </script>
 
 <template>
@@ -39,12 +63,23 @@ const hasAside = computed(() => Boolean(slots.aside))
       <div class="tool-head__row">
         <span class="tool-head__eyebrow">
           <span class="tool-head__bar" />
-          {{ eyebrow }}
+          {{ eyebrowText }}
         </span>
-        <RouterLink v-if="doc" :to="doc" class="doc-link">
-          <BookOpen />
-          <span>文档</span>
-        </RouterLink>
+        <div class="tool-head__tools">
+          <ToolStateActions
+            v-if="showStateActions"
+            :saved-at="savedAt"
+            :restored="restored"
+            :error="stateError"
+            :can-clear="canClear"
+            @reset="emit('reset')"
+            @clear="emit('clear')"
+          />
+          <RouterLink v-if="doc" :to="doc" class="doc-link">
+            <BookOpen />
+            <span>文档</span>
+          </RouterLink>
+        </div>
       </div>
       <h1 class="tool-head__title">{{ title }}</h1>
       <p v-if="subtitle" class="tool-head__subtitle">{{ subtitle }}</p>
@@ -98,6 +133,7 @@ const hasAside = computed(() => Boolean(slots.aside))
 /* ---------------------------------------------------------------- head */
 
 .tool-head {
+  display: block;
   margin-bottom: 16px;
 }
 
@@ -124,6 +160,15 @@ const hasAside = computed(() => Boolean(slots.aside))
   height: 14px;
   border-radius: 2px;
   background: var(--accent);
+}
+
+.tool-head__tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .tool-head__title {

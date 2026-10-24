@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowRight,
   Download,
@@ -27,6 +27,7 @@ import { formatHkl } from '@/core/math/vec'
 import { useStructureStore } from '@/stores/structure'
 import { useProjectStore } from '@/stores/project'
 import { downloadText, safeFilename, timestamp } from '@/utils/download'
+import { useToolDraft } from '@/composables/useToolDraft'
 
 const structureStore = useStructureStore()
 const project = useProjectStore()
@@ -291,6 +292,93 @@ async function copyPeaks() {
 }
 
 const drawer = ref<DrawerState>('closed')
+
+const draft = useToolDraft({
+  toolId: 'xrd',
+  defaults: () => ({
+    anodeId: 'Cu',
+    wavelength: 1.54056,
+    ka2Wavelength: 1.54439,
+    ka2: true,
+    twoThetaMin: 20,
+    twoThetaMax: 80,
+    step: 0.02,
+    profile: 'pseudoVoigt' as const,
+    fwhm: 0.12,
+    eta: 0.55,
+    background: 30,
+    scaleTo: 10000,
+    zeroShift: 0,
+    overlay: false,
+    whPeaks: [
+      { twoTheta: 25.3, fwhm: 0.42 },
+      { twoTheta: 37.8, fwhm: 0.36 },
+      { twoTheta: 48.1, fwhm: 0.31 },
+      { twoTheta: 54.0, fwhm: 0.29 },
+      { twoTheta: 62.7, fwhm: 0.27 },
+    ],
+    scherrerTheta: 25.3,
+    scherrerFwhm: 0.42,
+  }),
+  snapshot: () => ({
+    anodeId: anodeId.value,
+    wavelength: wavelength.value,
+    ka2Wavelength: ka2Wavelength.value,
+    ka2: ka2.value,
+    twoThetaMin: twoThetaMin.value,
+    twoThetaMax: twoThetaMax.value,
+    step: step.value,
+    profile: profile.value,
+    fwhm: fwhm.value,
+    eta: eta.value,
+    background: background.value,
+    scaleTo: scaleTo.value,
+    zeroShift: zeroShift.value,
+    overlay: overlay.value,
+    whPeaks: whPeaks.value.map((peak) => ({ ...peak })),
+    scherrerTheta: scherrerTheta.value,
+    scherrerFwhm: scherrerFwhm.value,
+  }),
+  restore: (data) => {
+    anodeId.value = data.anodeId
+    wavelength.value = data.wavelength
+    ka2Wavelength.value = data.ka2Wavelength
+    ka2.value = data.ka2
+    twoThetaMin.value = data.twoThetaMin
+    twoThetaMax.value = data.twoThetaMax
+    step.value = data.step
+    profile.value = data.profile === 'gaussian' || data.profile === 'lorentzian' ? data.profile : 'pseudoVoigt'
+    fwhm.value = data.fwhm
+    eta.value = data.eta
+    background.value = data.background
+    scaleTo.value = data.scaleTo
+    zeroShift.value = data.zeroShift
+    overlay.value = data.overlay
+    whPeaks.value = Array.isArray(data.whPeaks)
+      ? data.whPeaks.filter((peak) => Number.isFinite(peak?.twoTheta) && Number.isFinite(peak?.fwhm)).map((peak) => ({ ...peak }))
+      : []
+    scherrerTheta.value = data.scherrerTheta
+    scherrerFwhm.value = data.scherrerFwhm
+  },
+})
+
+function resetAll() {
+  draft.reset()
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm('将清空本页的模拟参数、W–H 峰表和自动保存记录；不会清除当前晶体结构或已导入的实验数据。确定继续？', '清空本页', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  draft.clear()
+  ElMessage.success('已清空本页')
+}
 </script>
 
 <template>
@@ -299,9 +387,13 @@ const drawer = ref<DrawerState>('closed')
     title="XRD 模拟与分析"
     subtitle="由晶体结构计算理论粉末衍射谱：2θ、多重度、洛伦兹-偏振因子与峰型，并扩展到 Scherrer 与 Williamson–Hall 分析。"
     doc="/docs/userguide/xrd"
-    eyebrow="衍射模拟 · 02"
     v-model:result-state="drawer"
     result-title="理论谱与峰表"
+    :saved-at="draft.savedAt"
+    :restored="draft.restored"
+    :state-error="draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #run>
       <button type="button" class="btn btn--primary btn--lg" :disabled="!pattern" @click="drawer = 'half'">

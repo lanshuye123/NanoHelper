@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Activity, Camera, Copy, Download, Gauge, Magnet, Ruler, ScanLine, Sparkles } from 'lucide-vue-next'
 import ToolPage from '@/components/layout/ToolPage.vue'
 import type { DrawerState, ResultTab } from '@/components/tool/types'
@@ -23,6 +23,7 @@ import {
   scherzerDefocus,
 } from '@/core/micro/tem'
 import { downloadText, safeFilename, timestamp } from '@/utils/download'
+import { useToolDraft } from '@/composables/useToolDraft'
 
 const drawer = ref<DrawerState>('closed')
 const resultTabs: ResultTab[] = ['text', 'download', 'copy']
@@ -42,6 +43,79 @@ const beamCurrentUa = ref(1)
 const spotDiameterNm = ref(10)
 const alphaMrad = ref(10)
 const ctfDefocusNm = ref(-40)
+
+const draft = useToolDraft({
+  toolId: 'tem',
+  defaults: () => ({
+    voltageKv: 200,
+    betaMrad: 10,
+    csMm: 0.5,
+    ccMm: 1.2,
+    energySpreadEv: 1,
+    defocusNm: 10,
+    cameraLengthMm: 800,
+    radiusMm: 5,
+    lensK: 90,
+    lensI: 1,
+    lensN: 3000,
+    beamCurrentUa: 1,
+    spotDiameterNm: 10,
+    alphaMrad: 10,
+    ctfDefocusNm: -40,
+  }),
+  snapshot: () => ({
+    voltageKv: voltageKv.value,
+    betaMrad: betaMrad.value,
+    csMm: csMm.value,
+    ccMm: ccMm.value,
+    energySpreadEv: energySpreadEv.value,
+    defocusNm: defocusNm.value,
+    cameraLengthMm: cameraLengthMm.value,
+    radiusMm: radiusMm.value,
+    lensK: lensK.value,
+    lensI: lensI.value,
+    lensN: lensN.value,
+    beamCurrentUa: beamCurrentUa.value,
+    spotDiameterNm: spotDiameterNm.value,
+    alphaMrad: alphaMrad.value,
+    ctfDefocusNm: ctfDefocusNm.value,
+  }),
+  restore: (data) => {
+    voltageKv.value = data.voltageKv
+    betaMrad.value = data.betaMrad
+    csMm.value = data.csMm
+    ccMm.value = data.ccMm
+    energySpreadEv.value = data.energySpreadEv
+    defocusNm.value = data.defocusNm
+    cameraLengthMm.value = data.cameraLengthMm
+    radiusMm.value = data.radiusMm
+    lensK.value = data.lensK
+    lensI.value = data.lensI
+    lensN.value = data.lensN
+    beamCurrentUa.value = data.beamCurrentUa
+    spotDiameterNm.value = data.spotDiameterNm
+    alphaMrad.value = data.alphaMrad
+    ctfDefocusNm.value = data.ctfDefocusNm
+  },
+})
+
+function resetAll() {
+  draft.reset()
+}
+
+async function clearPage() {
+  try {
+    await ElMessageBox.confirm('将清空本页参数和自动保存记录。确定继续？', '清空本页', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  draft.clear()
+  ElMessage.success('已清空本页')
+}
 
 const state = computed(() => {
   try {
@@ -231,11 +305,15 @@ async function copyReport() {
     tool-id="tem"
     title="电镜参数计算"
     subtitle="由加速电压、光阑半角与透镜参数计算电子波长、瑞利分辨率、CTF、景深、相干长度、像差弥散、磁透镜焦距与相机常数。"
-    eyebrow="显微分析 · 02"
     doc="/docs/userguide/tem"
     v-model:result-state="drawer"
     result-title="电镜参数报告"
     :result-tabs="resultTabs"
+    :saved-at="draft.savedAt"
+    :restored="draft.restored"
+    :state-error="draft.error"
+    @reset="resetAll"
+    @clear="clearPage"
   >
     <template #run>
       <button type="button" class="btn btn--primary btn--lg" @click="drawer = 'half'">查看参数报告</button>
