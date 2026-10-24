@@ -3,12 +3,14 @@ import { ArrowRight, BookOpen, Upload } from 'lucide-vue-next'
 import { NAV_MODULES } from '@/config/navigation'
 import UiButton from '@/components/ui/UiButton.vue'
 
-const featureModules = NAV_MODULES.filter((module) => ['data', 'diffraction', 'crystal', 'docs'].includes(module.key))
+const featureModules = NAV_MODULES.filter((module) =>
+  ['data', 'diffraction', 'crystal', 'micro', 'docs'].includes(module.key),
+)
 
 const heroStats = [
-  { value: '7', label: '个工具页面' },
-  { value: '3', label: '个计算模块' },
-  { value: '100%', label: '浏览器本地计算' },
+  { value: '14', label: '个工具页面' },
+  { value: '4', label: '个计算模块' },
+  { value: '7', label: '类分析任务' },
 ]
 </script>
 
@@ -30,7 +32,8 @@ const heroStats = [
           <span class="hero__title-accent">变成随手可用的工具。</span>
         </h1>
         <p class="hero__sub">
-          从原始谱图到 Jade 拟合，从倒易空间到带轴电子衍射。所有解析与计算都在浏览器中完成，数据不离开你的电脑。
+          从原始谱图到 Jade 拟合，从倒易空间到带轴电子衍射，再到 SEM
+          粒径统计与三维晶胞。把课程里的推导变成可复用的分析流程。
         </p>
         <div class="hero__actions">
           <UiButton to="/data/import" variant="primary" size="lg" :icon-right="ArrowRight">开始导入</UiButton>
@@ -86,9 +89,9 @@ const heroStats = [
       <div class="section__head">
         <div>
           <span class="section-label">MODULES</span>
-          <h2 class="section__title">三个计算模块，一个文档中心</h2>
+          <h2 class="section__title">四个计算模块，一个文档中心</h2>
         </div>
-        <span class="chip chip--accent">纯前端 · 离线可用</span>
+        <span class="chip chip--accent">覆盖 XRD · SAED · SEM</span>
       </div>
 
       <div class="module-grid">
@@ -127,7 +130,7 @@ const heroStats = [
 
     <footer class="dash-foot">
       <span class="mono">CrystalToolBox v0.1.0</span>
-      <span class="dim">数据本地处理 · 无账号 · 无上传</span>
+      <span class="dim">XRD · SAED · 显微分析</span>
       <RouterLink to="/about">关于与引用</RouterLink>
     </footer>
   </div>
@@ -323,7 +326,7 @@ const heroStats = [
 
 .module-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
 }
 

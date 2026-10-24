@@ -7,7 +7,7 @@ import { ArrowLeft, Compass } from 'lucide-vue-next'
     <div class="notfound__code mono">404</div>
     <Compass class="notfound__icon" />
     <h1>这个页面不在倒易空间里</h1>
-    <p>链接可能已过期，或工具路径拼写有误。</p>
+    <p>链接可能已过期，或页面地址有误。</p>
     <div class="btn-row">
       <el-button type="primary" @click="$router.push('/')"> <ArrowLeft class="btn-icon" /> 返回首页 </el-button>
       <el-button plain @click="$router.push('/docs/userguide/getting-started')">用户指南</el-button>

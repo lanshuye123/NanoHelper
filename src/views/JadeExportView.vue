@@ -178,9 +178,9 @@ async function copyPreview() {
   if (!preview.value) return
   try {
     await navigator.clipboard.writeText(preview.value)
-    ElMessage.success('已复制到剪贴板')
+    ElMessage.success('已复制')
   } catch {
-    ElMessage.error('浏览器拒绝了剪贴板访问，请使用导出按钮')
+    ElMessage.error('复制失败，请使用导出按钮')
   }
 }
 </script>

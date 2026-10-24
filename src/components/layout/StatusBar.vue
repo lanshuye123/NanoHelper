@@ -8,7 +8,7 @@ const project = useProjectStore()
 const version = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0'
 
 const summary = computed(() => {
-  if (!project.hasData || !project.derived) return '就绪 · 请从「XRD 数据预处理」开始'
+  if (!project.hasData || !project.derived) return '就绪 · 从左侧选择工具开始'
   const pattern = project.derived
   const name = project.source?.name ?? '未命名数据'
   return `${name} · ${describePattern(pattern)} · ${project.steps.length} 个处理步骤`
@@ -27,7 +27,7 @@ const status = computed(() => {
   <footer class="status-bar">
     <div class="status-left">
       <span class="status-dot" :class="`is-${status}`" />
-      <span>本地运行 · 数据不上传</span>
+      <span>工作台</span>
     </div>
     <div class="status-center mono">{{ summary }}</div>
     <div class="status-right mono">CrystalToolBox v{{ version }}</div>

@@ -286,7 +286,7 @@ async function copyPeaks() {
     await navigator.clipboard.writeText(peakText.value)
     ElMessage.success('已复制峰表')
   } catch {
-    ElMessage.error('浏览器拒绝访问剪贴板')
+    ElMessage.error('复制失败，请重试')
   }
 }
 

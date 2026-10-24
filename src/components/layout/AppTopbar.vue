@@ -1,18 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import {
-  Atom,
-  BookOpen,
-  Compass,
-  Info,
-  Menu,
-  Moon,
-  ScanLine,
-  Search,
-  Sun,
-  Upload,
-} from 'lucide-vue-next'
+import { Atom, BookOpen, Compass, Info, Menu, Microscope, Moon, ScanLine, Search, Sun, Upload } from 'lucide-vue-next'
 import BrandLogo from './BrandLogo.vue'
 import { NAV_MODULES } from '@/config/navigation'
 import { useQuickSearch } from '@/composables/useQuickSearch'
@@ -29,6 +18,7 @@ const ICONS: Record<string, typeof Upload> = {
   data: Upload,
   diffraction: ScanLine,
   crystal: Atom,
+  micro: Microscope,
   docs: BookOpen,
   about: Info,
 }
@@ -85,11 +75,6 @@ const activeKey = computed(() => {
           <span class="nav-search__text">搜索</span>
           <kbd class="nav-search__kbd">Ctrl K</kbd>
         </button>
-
-        <span class="local-chip" title="所有解析与计算均在浏览器本地完成">
-          <span class="local-chip__dot" />
-          本地运行
-        </span>
 
         <span class="version-badge mono">v{{ version }}</span>
 
@@ -277,26 +262,6 @@ const activeKey = computed(() => {
   letter-spacing: 0.02em;
 }
 
-.local-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 11px;
-  border-radius: 999px;
-  background: var(--nav-control-bg);
-  color: var(--nav-muted);
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.local-chip__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #7ce3b1;
-}
-
 .version-badge {
   display: inline-flex;
   align-items: center;
@@ -333,10 +298,6 @@ const activeKey = computed(() => {
 }
 
 @media (max-width: 1280px) {
-  .local-chip {
-    display: none;
-  }
-
   .module-tab {
     padding: 0 9px;
   }

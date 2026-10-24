@@ -221,7 +221,7 @@ async function copyTable() {
     await navigator.clipboard.writeText(previewLines.value)
     ElMessage.success('已复制导出表格')
   } catch {
-    ElMessage.error('浏览器拒绝访问剪贴板')
+    ElMessage.error('复制失败，请重试')
   }
 }
 

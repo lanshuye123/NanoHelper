@@ -351,6 +351,7 @@ pre.code-surface code {
 
 .drawer[data-state='closed'] {
   transform: translateY(101%);
+  visibility: hidden;
   pointer-events: none;
 }
 

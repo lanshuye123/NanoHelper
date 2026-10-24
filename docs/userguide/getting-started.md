@@ -96,3 +96,6 @@ Jade 中拟合完成后，选择 **File → Save → DIF**。回到 **数据处�
 - [数据导入](/docs/userguide/data-import)
 - [预处理与逆处理](/docs/userguide/preprocessing)
 - [Raman → Jade → Origin 全流程](/docs/cookbook/raman-to-jade)
+- [颗粒尺寸测量](/docs/userguide/particles)
+- [晶胞与密度](/docs/userguide/cell)
+- [三维晶胞查看器](/docs/userguide/crystal-viewer)

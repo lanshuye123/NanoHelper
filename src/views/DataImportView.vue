@@ -133,7 +133,7 @@ async function copySummary() {
     await navigator.clipboard.writeText(summaryText.value)
     ElMessage.success('已复制数据摘要')
   } catch {
-    inlineError.value = '复制失败：浏览器拒绝访问剪贴板'
+    inlineError.value = '复制失败，请手动选择文本'
   }
 }
 
@@ -358,15 +358,11 @@ async function openProject(files: File[]) {
           </div>
 
           <div class="source-actions">
-            <button type="button" class="btn btn--quiet" @click="pasteOpen = true">
-              <ClipboardPaste /> 粘贴文本
-            </button>
+            <button type="button" class="btn btn--quiet" @click="pasteOpen = true"><ClipboardPaste /> 粘贴文本</button>
             <button type="button" class="btn btn--quiet" :disabled="!project.hasData" @click="saveProject">
               <Save /> 保存工程
             </button>
-            <button type="button" class="btn btn--quiet" @click="projectInput?.click()">
-              <FolderOpen /> 打开工程
-            </button>
+            <button type="button" class="btn btn--quiet" @click="projectInput?.click()"><FolderOpen /> 打开工程</button>
             <button type="button" class="btn btn--quiet" :disabled="!project.hasData" @click="project.clear()">
               清空
             </button>
@@ -386,9 +382,7 @@ async function openProject(files: File[]) {
             "
           />
 
-          <p class="field-hint">
-            支持 CSV / TSV / TXT / XY / DAT / DIF / XRDML / UXD。文件只在浏览器本地解析，不会上传。
-          </p>
+          <p class="field-hint">支持 CSV / TSV / TXT / XY / DAT / DIF / XRDML / UXD。可拖拽、选择文件或粘贴文本。</p>
         </div>
       </div>
     </template>
@@ -406,15 +400,11 @@ async function openProject(files: File[]) {
             hint="CSV / TSV / TXT / XY / DAT / DIF / XRDML / UXD · 推荐两列：X + 强度"
             @files="handleFiles"
           />
-          <p v-else class="field-hint">
-            已载入数据。要更换文件，可在「数据源」中清空后重新导入。
-          </p>
+          <p v-else class="field-hint">已载入数据。要更换文件，可在「数据源」中清空后重新导入。</p>
 
           <div class="row paste-row">
-            <button type="button" class="btn btn--quiet" @click="pasteOpen = true">
-              <ClipboardPaste /> 粘贴文本
-            </button>
-            <span class="field-hint">也可以直接从剪贴板粘贴两列数据</span>
+            <button type="button" class="btn btn--quiet" @click="pasteOpen = true"><ClipboardPaste /> 粘贴文本</button>
+            <span class="field-hint">也可以直接粘贴两列数据</span>
           </div>
 
           <p v-if="inlineError" class="field-error" aria-live="polite">{{ inlineError }}</p>
@@ -467,7 +457,6 @@ async function openProject(files: File[]) {
         </el-dropdown>
         <span class="section-note">{{ steps.length }} 个步骤，可在「更多设置」中调整</span>
       </div>
-
     </template>
 
     <div class="panel">

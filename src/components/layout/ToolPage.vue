@@ -180,6 +180,10 @@ const hasAside = computed(() => Boolean(slots.aside))
   align-items: start;
 }
 
+.tool-config > * {
+  flex: 0 0 auto;
+}
+
 .tool-config {
   position: sticky;
   top: 10px;

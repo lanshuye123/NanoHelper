@@ -8,16 +8,16 @@
 0.052632 222.6806
 ```
 
-| 规则 | 值 |
-|---|---|
-| 编码 | ASCII / UTF-8 无 BOM |
-| 列 | 2 列，空白分隔 |
-| X 范围 | 0–140 |
-| Y | > 0 |
-| X 单调 | 是 |
-| 行尾 | CRLF（推荐） |
-| 表头 | 无（默认） |
-| 小数位 | X 6，Y 4（可调） |
+| 规则   | 值                   |
+| ------ | -------------------- |
+| 编码   | ASCII / UTF-8 无 BOM |
+| 列     | 2 列，空白分隔       |
+| X 范围 | 0–140                |
+| Y      | > 0                  |
+| X 单调 | 是                   |
+| 行尾   | CRLF（推荐）         |
+| 表头   | 无（默认）           |
+| 小数位 | X 6，Y 4（可调）     |
 
 本工具的校验器会拒绝：X 越界、Y ≤ 0、NaN、非单调、点数 < 2。
 
@@ -39,16 +39,16 @@
 
 参数行：
 
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| start | float | 起始 2θ |
-| step | float | 步长 |
-| flag | float/int | 版本相关，忽略 |
-| anode | string | 靶材（Cu/Co/Mo…） |
-| wavelength | float | Kα1 波长（Å） |
-| end | float | 终止 2θ |
-| npoints | int | 点数 |
-| name | string | 括号内的曲线名 |
+| 字段       | 类型      | 说明              |
+| ---------- | --------- | ----------------- |
+| start      | float     | 起始 2θ           |
+| step       | float     | 步长              |
+| flag       | float/int | 版本相关，忽略    |
+| anode      | string    | 靶材（Cu/Co/Mo…） |
+| wavelength | float     | Kα1 波长（Å）     |
+| end        | float     | 终止 2θ           |
+| npoints    | int       | 点数              |
+| name       | string    | 括号内的曲线名    |
 
 Y 值每行 8 个，空白分隔；不同块可使用不同 start/step/npoints。
 
@@ -81,7 +81,14 @@ Y 值每行 8 个，空白分隔；不同块可使用不同 start/step/npoints�
   },
   "steps": [
     { "type": "smooth", "enabled": true, "params": { "method": "sg", "window": 11, "order": 3 } },
-    { "type": "jade-map", "enabled": true, "params": { "mode": "nonDiffraction", "mapping": { "xScale": 0.05263, "xOffset": -5.263, "yScale": 10.6087, "yOffset": -1429.76 } } }
+    {
+      "type": "jade-map",
+      "enabled": true,
+      "params": {
+        "mode": "nonDiffraction",
+        "mapping": { "xScale": 0.05263, "xOffset": -5.263, "yScale": 10.6087, "yOffset": -1429.76 }
+      }
+    }
   ],
   "mapping": { "xScale": 0.05263, "xOffset": -5.263, "yScale": 10.6087, "yOffset": -1429.76 },
   "checksum": "fnv1a:1a2b3c4d",
@@ -105,9 +112,7 @@ Y 值每行 8 个，空白分隔；不同块可使用不同 start/step/npoints�
     "x": [20, 20.02],
     "y": [372, 403]
   },
-  "steps": [
-    { "id": "…", "type": "crop", "enabled": true, "params": { "xMin": 20, "xMax": 80 } }
-  ]
+  "steps": [{ "id": "…", "type": "crop", "enabled": true, "params": { "xMin": 20, "xMax": 80 } }]
 }
 ```
 
@@ -179,3 +184,49 @@ Na1 Na 0 0 0 1 0.5
 - 输入：UTF-8 优先，GBK 回退；
 - 输出：默认 UTF-8（ASCII 兼容）；Jade XY 的数值部分为纯 ASCII；
 - 行尾：Jade XY 默认 CRLF；CSV 默认 LF（Origin 两者都接受）。
+
+## 颗粒测量 CSV
+
+测量表（`*_measurements_*.csv`）：
+
+```csv
+index,method,size_nm,size_display_nm,length_px,area_px,perimeter_px,circularity,x1_px,y1_px,x2_px,y2_px,source
+1,线测法/Feret,108.779,108.779,43.51,,,  ,512.3,410.2,545.1,441.7,manual
+2,面积等效圆,72.36,72.36,28.94,658.2,92.1,0.976,...
+```
+
+- `size_nm` 始终以 nm 保存，`size_<unit>` 是当前显示单位；
+- 手动画线记录 `length_px` 与端点；自动识别额外记录面积、周长、圆度；
+- `method` 区分 Feret 与面积等效圆；`source` 区分 manual / auto。
+
+分组表（`*_histogram_*.csv`）：
+
+```csv
+# 粒径分布（nm；左闭右开，末组含上限）
+bin_low_nm,bin_high_nm,count,frequency
+20.000000,40.000000,12,18.4615
+```
+
+TXT 报告包含「基本报告」（逐颗）、「统计报告」（分组）与「汇总」（均值/标准差/D10…），便于直接粘贴到 Origin。
+
+## 晶格精修 CSV
+
+```csv
+h,k,l,twoTheta_obs,twoTheta_calc,residual,d_obs,d_calc,weight
+1,1,1,28.501347,28.501347,0.000000,3.129125,3.135589,1
+```
+
+第二段是 `parameter,value,sigma`，最后是 `rms_deg`、`rwp_percent` 与 `iterations`。
+
+## SAED 指标化 CSV
+
+```csv
+h1,k1,l1,h2,k2,l2,u,v,w,d1,d2,angle,delta_d1,delta_d2,delta_angle,score,allowed
+-1,-1,-1,-2,-2,0,1,-1,0,3.1356,1.9201,35.2636,0.0001,0.0000,0.0001,0.108,1
+```
+
+`allowed` 为 1/0，表示是否通过空间群系统消光检查。
+
+## 三维晶胞内嵌
+
+`public/crystal-viewer/` 是 CrystalViewer 的静态构建，不是数据格式；`index.html` 使用相对路径 `./assets/`，可随本站部署到任意子路径。同步脚本：`npm run embed:cryviewer`。

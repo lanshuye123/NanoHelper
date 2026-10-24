@@ -10,15 +10,14 @@ import {
   FlaskConical,
   Info,
   LayoutDashboard,
-  Lock,
-  Ruler,
+  Microscope,
   ScanLine,
   Upload,
 } from 'lucide-vue-next'
 import { DOC_SECTIONS, docsBySection, docPath, type DocEntry, type DocSection } from '@/docs/manifest'
 import { tools, type ToolGroup, type ToolMeta } from '@/tools/registry'
 
-export type ModuleKey = 'home' | 'data' | 'diffraction' | 'crystal' | 'docs' | 'about'
+export type ModuleKey = 'home' | 'data' | 'diffraction' | 'crystal' | 'micro' | 'docs' | 'about'
 
 export interface NavItem {
   id: string
@@ -79,10 +78,19 @@ const GROUP_META: Record<
     key: 'crystal',
     label: '晶体几何',
     short: '晶体',
-    description: '倒易空间、晶带与 CIF 结构解析',
+    description: '倒易空间、晶带、晶胞与 CIF 结构解析',
     icon: Atom,
     accent: 'var(--module-crystal)',
     highlights: ['d 值/夹角', '晶带轴', 'CIF 展开'],
+  },
+  micro: {
+    key: 'micro',
+    label: '显微分析',
+    short: '显微',
+    description: 'SEM/TEM 图像、电子衍射与电镜参数',
+    icon: Microscope,
+    accent: 'var(--module-micro)',
+    highlights: ['粒径统计', 'SAED 指标化', '电镜参数'],
   },
 }
 
@@ -131,11 +139,11 @@ const docsModule: NavModule = {
   key: 'docs',
   label: '文档中心',
   short: '文档',
-  description: '用户指南、实战手册、参考与开发文档',
+  description: '用户指南、实战手册与参考资料',
   path: '/docs/userguide/getting-started',
   icon: BookOpen,
   accent: 'var(--module-docs)',
-  highlights: ['Markdown', 'KaTeX', '站内搜索'],
+  highlights: ['用户指南', '实战手册', '站内搜索'],
   items: docNavGroups.map((group) => ({
     id: group.key,
     label: group.label,
@@ -157,7 +165,7 @@ const aboutModule: NavModule = {
     {
       id: 'about-overview',
       label: '项目概览',
-      description: '版本、定位与技术边界',
+      description: '版本、定位与适用范围',
       path: '/about',
       icon: Info,
     },
@@ -169,18 +177,11 @@ const aboutModule: NavModule = {
       icon: Database,
     },
     {
-      id: 'about-privacy',
-      label: '隐私与离线',
-      description: '本地解析、无上传、无跟踪',
-      path: '/about#about-privacy',
-      icon: Lock,
-    },
-    {
-      id: 'about-stack',
-      label: '技术栈',
-      description: 'Vue 3 · Vite · Element Plus · Canvas',
-      path: '/about#about-stack',
-      icon: Ruler,
+      id: 'about-scope',
+      label: '功能范围',
+      description: '数据处理、衍射、显微分析与三维结构',
+      path: '/about#about-scope',
+      icon: Compass,
     },
     {
       id: 'about-docs',
@@ -215,6 +216,7 @@ export const NAV_MODULES: NavModule[] = [
   moduleForGroup('data'),
   moduleForGroup('diffraction'),
   moduleForGroup('crystal'),
+  moduleForGroup('micro'),
   docsModule,
   aboutModule,
 ]
@@ -259,7 +261,7 @@ export const searchEntries = [
     kind: 'page' as const,
     id: 'page-about',
     label: '关于本项目',
-    description: '版本、数据来源、隐私与技术栈',
+    description: '版本、数据来源、适用范围与引用',
     path: '/about',
     module: '关于',
     icon: Info,

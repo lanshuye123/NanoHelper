@@ -281,7 +281,7 @@ async function copyDTable() {
     await navigator.clipboard.writeText(dText.value)
     ElMessage.success('已复制 d 值表')
   } catch {
-    /* 剪贴板不可用时保持静默，用户仍可手动选择文本 */
+    /* 复制不可用时保持静默，用户仍可手动选择文本 */
   }
 }
 

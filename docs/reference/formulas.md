@@ -325,13 +325,13 @@ $V$ 为 Å³，$\rho$ 为 g/cm³。
 
 ## 12. 常用常数
 
-| 常数 | 值 |
-|---|---|
+| 常数  | 值                              |
+| ----- | ------------------------------- |
 | $N_A$ | $6.02214076\times10^{23}$ mol⁻¹ |
-| $h$ | $6.62607015\times10^{-34}$ J·s |
+| $h$   | $6.62607015\times10^{-34}$ J·s  |
 | $m_e$ | $9.1093837015\times10^{-31}$ kg |
-| $e$ | $1.602176634\times10^{-19}$ C |
-| $c$ | $2.99792458\times10^8$ m/s |
+| $e$   | $1.602176634\times10^{-19}$ C   |
+| $c$   | $2.99792458\times10^8$ m/s      |
 
 ## 13. 约定与边界
 
@@ -339,3 +339,169 @@ $V$ 为 Å³，$\rho$ 为 g/cm³。
 - 结构因子相位使用 $2\pi$。
 - 电子衍射强度为运动学近似；XRD 强度未含吸收、择优取向、仪器几何。
 - 粉末多重度使用 Laue 轨道；非中心对称空间群的 Friedel 对按等价处理。
+
+## 14. 晶胞、密度与堆积
+
+晶胞体积：
+
+$$
+V=abc\sqrt{1-\cos^2\alpha-\cos^2\beta-\cos^2\gamma+2\cos\alpha\cos\beta\cos\gamma}
+$$
+
+晶胞质量与理论密度：
+
+$$
+m_{\text{cell}}=\sum_j g_jM_j,\qquad
+\rho=\frac{m_{\text{cell}}}{N_A V}
+$$
+
+化学式单元数：
+
+$$
+Z=\frac{m_{\text{cell}}}{M_{\text{formula}}}
+$$
+
+常见堆积因子：
+
+| 结构   | $r$         | APF                         |
+| ------ | ----------- | --------------------------- |
+| SC     | $a/2$       | $\pi/6$                     |
+| BCC    | $\sqrt3a/4$ | $\sqrt3\pi/8$               |
+| FCC    | $\sqrt2a/4$ | $\sqrt2\pi/6$               |
+| 金刚石 | $\sqrt3a/8$ | $\sqrt3\pi/16$              |
+| HCP    | $a/2$       | $\dfrac{2\pi a}{3\sqrt3 c}$ |
+
+## 15. 系统消光
+
+对空间群的全部对称操作，把原子放在一般位置：
+
+$$
+F_{\text{gen}}(\vec g)=\sum_j e^{2\pi i\,\vec g\cdot(R_j\vec r+t_j)}
+$$
+
+若 $|F_{\text{gen}}|\approx0$，该反射为系统消光。该判据与原子种类和具体坐标无关。
+
+## 16. 晶格参数精修
+
+峰位模型：
+
+$$
+2\theta_i^{\text{calc}}=2\arcsin\!\left(\frac{\lambda}{2d_{hkl}}\right)+\Delta
+$$
+
+目标函数：
+
+$$
+\chi^2=\sum_i w_i\left(2\theta_i^{\text{obs}}-2\theta_i^{\text{calc}}\right)^2
+$$
+
+Levenberg–Marquardt 法方程：
+
+$$
+\left(J^\top WJ+\mu\,\mathrm{diag}(J^\top WJ)\right)\delta=-J^\top Wr
+$$
+
+Nelson–Riley：
+
+$$
+a_{\text{obs}}=d_{\text{obs}}\sqrt{h^2+k^2+l^2}
+$$
+
+$$
+\mathrm{NR}=\frac12\left(\frac{\cos^2\theta}{\sin\theta}+\frac{\cos^2\theta}{\theta}\right)
+$$
+
+对 $a_{\text{obs}}$–NR 线性外推到 NR = 0。
+
+## 17. 电镜参数
+
+相对论电子波长：
+
+$$
+\lambda=\frac{h}{\sqrt{2m_0eV(1+eV/2m_0c^2)}}
+$$
+
+瑞利分辨率、景深、时间相干长度：
+
+$$
+\delta=\frac{0.61\lambda}{\mu\sin\beta},\qquad
+\Delta z\approx\frac{2\lambda}{\beta^2},\qquad
+\lambda_c=\frac{vh}{\Delta E}
+$$
+
+磁透镜焦距：
+
+$$
+f=K\frac{U}{(IN)^2}
+$$
+
+三阶像差弥散：
+
+$$
+r_{\text{sph}}=C_s\beta^3,\qquad
+r_{\text{chr}}=C_c\frac{\Delta E}{E_0}\beta,\qquad
+r_{\text{ast}}=\Delta f\,\beta
+$$
+
+电子枪亮度：
+
+$$
+\beta=\frac{i_e}{\pi(d_0/2)^2\cdot\pi\alpha_0^2}
+$$
+
+相机常数：
+
+$$
+R=L\lambda\,|g|=\frac{L\lambda}{d}
+$$
+
+CTF 与 Scherzer 离焦：
+
+$$
+\mathrm{CTF}(u)=-\sin\left[\pi\lambda u^2\left(\Delta f+\tfrac12C_s\lambda^2u^2\right)\right]
+$$
+
+$$
+\Delta f_{\mathrm{Sch}}=-\sqrt{\frac{4}{3}C_s\lambda},\qquad
+\delta_{\mathrm{point}}\approx\frac{1}{u_1}
+$$
+
+## 18. 颗粒统计
+
+样本均值与标准差：
+
+$$
+\bar d=\frac1n\sum_i d_i,\qquad
+s=\sqrt{\frac{1}{n-1}\sum_i(d_i-\bar d)^2}
+$$
+
+跨度与变异系数：
+
+$$
+\mathrm{Span}=\frac{D_{90}-D_{10}}{D_{50}},\qquad
+CV=\frac{s}{\bar d}
+$$
+
+面积等效圆直径：
+
+$$
+d_{\text{eq}}=2\sqrt{\frac{A}{\pi}}
+$$
+
+高斯拟合：
+
+$$
+p(d)=\frac{1}{\sigma\sqrt{2\pi}}\exp\!\left[-\frac{(d-\mu)^2}{2\sigma^2}\right]
+$$
+
+对数正态拟合：
+
+$$
+p(d)=\frac{1}{d\sigma\sqrt{2\pi}}\exp\!\left[-\frac{(\ln d-\mu)^2}{2\sigma^2}\right]
+$$
+
+直方图期望计数：
+
+$$
+N_{\text{bin}}=n\int_{d_{\text{low}}}^{d_{\text{high}}}p(d)\,\mathrm dd
+$$

@@ -183,7 +183,7 @@ async function copyAtoms() {
     await navigator.clipboard.writeText(atomText.value)
     ElMessage.success('已复制原子位点')
   } catch {
-    ElMessage.error('浏览器拒绝访问剪贴板')
+    ElMessage.error('复制失败，请重试')
   }
 }
 

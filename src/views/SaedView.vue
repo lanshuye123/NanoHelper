@@ -184,7 +184,7 @@ async function copySpots() {
     await navigator.clipboard.writeText(spotText.value)
     ElMessage.success('已复制斑点表')
   } catch {
-    ElMessage.error('浏览器拒绝访问剪贴板')
+    ElMessage.error('复制失败，请重试')
   }
 }
 
@@ -260,7 +260,7 @@ const drawer = ref<DrawerState>('closed')
       <PanelCard title="显示与标定" :icon="Gauge">
         <div class="form-stack">
           <label class="field">
-            <span class="field__label">画布坐标</span>
+            <span class="field__label">斑点坐标</span>
             <el-radio-group v-model="displayUnit" size="small">
               <el-radio-button label="invA">1/Å</el-radio-button>
               <el-radio-button label="mm">mm</el-radio-button>
