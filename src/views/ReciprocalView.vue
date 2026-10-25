@@ -403,6 +403,9 @@ const drawer = ref<DrawerState>('closed')
         </div>
       </PanelCard>
 
+    </template>
+
+    <template #more>
       <PanelCard title="枚举与消光" :icon="Grid3x3">
         <div class="form-stack">
           <NumberField v-model="maxIndex" label="最大指数 |h|,|k|,|l|" :min="1" :max="12" />

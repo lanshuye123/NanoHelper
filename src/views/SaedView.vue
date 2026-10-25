@@ -324,6 +324,9 @@ const drawer = ref<DrawerState>('closed')
         </div>
       </PanelCard>
 
+    </template>
+
+    <template #more>
       <PanelCard title="显示与标定" :icon="Gauge">
         <div class="form-stack">
           <label class="field">

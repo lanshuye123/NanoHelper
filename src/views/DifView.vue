@@ -423,6 +423,9 @@ const drawer = ref<DrawerState>('closed')
         </div>
       </PanelCard>
 
+    </template>
+
+    <template #more>
       <PanelCard title="配方反算" :icon="FileJson">
         <p class="small muted" style="line-height: 1.6">
           加载导入时导出的 <code>recipe.json</code>，把 Jade 归一化坐标还原为原始物理量。

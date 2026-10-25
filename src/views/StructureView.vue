@@ -255,7 +255,7 @@ const drawer = ref<DrawerState>('closed')
       </el-button>
     </template>
 
-    <template #params>
+    <template #input>
       <PanelCard title="CIF 导入" :icon="FileUp">
         <div class="drop-mini" @click="fileInput?.click()">
           <FileUp />
@@ -268,6 +268,9 @@ const drawer = ref<DrawerState>('closed')
           <div>对称操作 {{ lastParse.ops }} 条 · {{ lastParse.source }}</div>
         </div>
       </PanelCard>
+    </template>
+
+    <template #params>
 
       <PanelCard title="预设结构" :icon="FlaskConical">
         <div class="preset-list">
@@ -286,6 +289,9 @@ const drawer = ref<DrawerState>('closed')
         </div>
       </PanelCard>
 
+    </template>
+
+    <template #more>
       <PanelCard title="晶胞参数" :icon="Grid3x3">
         <div class="grid-2">
           <NumberField
