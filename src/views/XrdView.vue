@@ -425,7 +425,13 @@ async function clearPage() {
             <NumberField v-model="twoThetaMin" label="2θ 下限" unit="°" :min="1" :max="170" />
             <NumberField v-model="twoThetaMax" label="2θ 上限" unit="°" :min="2" :max="175" />
             <NumberField v-model="step" label="步长" unit="°" :min="0.002" :max="0.5" :precision="4" />
-          </div>
+          </div>        </div>
+      </PanelCard>
+    </template>
+
+    <template #more>
+      <PanelCard title="峰型与高级选项" :icon="LineChart">
+        <div class="form-stack">
           <label class="field">
             <span class="field__label">峰型</span>
             <el-select v-model="profile" size="small">
