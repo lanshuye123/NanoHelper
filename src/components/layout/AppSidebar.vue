@@ -5,9 +5,11 @@ import { PanelLeftClose, PanelLeftOpen, Search } from 'lucide-vue-next'
 import { NAV_MODULES, docNavGroups, moduleByKey, moduleForPath } from '@/config/navigation'
 import UiInput from '@/components/ui/UiInput.vue'
 import { useSettingsStore } from '@/stores/settings'
+import { useProjectStore } from '@/stores/project'
 
 const route = useRoute()
 const settings = useSettingsStore()
+const project = useProjectStore()
 const query = ref('')
 
 const version = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0'
@@ -18,6 +20,13 @@ const activeModule = computed(() => {
 })
 
 const isDocs = computed(() => activeModule.value.key === 'docs')
+
+const projectStatus = computed(() => {
+  if (!project.derived) return 'idle'
+  if (project.issues.some((issue) => issue.level === 'error')) return 'error'
+  if (project.issues.some((issue) => issue.level === 'warning')) return 'warn'
+  return 'ok'
+})
 
 const filteredDocGroups = computed(() => {
   const q = query.value.trim().toLowerCase()
@@ -73,30 +82,21 @@ watch(
       </UiInput>
     </div>
 
-    <nav class="sidebar-nav" :aria-label="`${activeModule.label}导航`">
-      <template v-if="isDocs">
-        <div v-for="group in filteredDocGroups" :key="group.key" class="docs-group">
-          <div class="docs-group__label">
-            <component :is="group.icon" />
-            <span>{{ group.label }}</span>
-          </div>
-          <RouterLink
-            v-for="doc in group.items"
-            :key="doc.path"
-            :to="doc.path"
-            class="nav-item nav-item--doc"
-            :class="{ 'is-active': isDocActive(doc.section, doc.slug) }"
-            :title="doc.description"
-          >
-            <span class="nav-item__label">{{ doc.title }}</span>
-          </RouterLink>
-        </div>
-        <p v-if="!filteredDocGroups.length" class="sidebar-empty">没有匹配的文档</p>
-      </template>
+    <nav class="sidebar-nav" aria-label="模块导航">
+      <details
+        v-for="module in NAV_MODULES"
+        :key="module.key"
+        class="side-group"
+        :open="module.key === activeModule.key"
+      >
+        <summary class="side-group__label">
+          <component :is="module.icon" />
+          <span>{{ module.label }}</span>
+          <span class="side-group__count">{{ module.items.length }}</span>
+        </summary>
 
-      <template v-else>
         <RouterLink
-          v-for="item in activeModule.items"
+          v-for="item in module.items"
           :key="item.id"
           :to="item.path"
           class="nav-item"
@@ -107,12 +107,23 @@ watch(
           <span class="nav-item__label">{{ item.label }}</span>
           <span v-if="item.index" class="nav-item__index mono">{{ item.index }}</span>
         </RouterLink>
-
-        <p v-if="activeModule.items.length" class="sidebar-hint">
-          共 {{ activeModule.items.length }} 个页面 · 顶部切换模块
-        </p>
-      </template>
+      </details>
     </nav>
+
+    <div class="side-project">
+      <div class="side-project__head">
+        <span class="side-project__dot" :class="`is-${projectStatus}`" />
+        <span>当前项目</span>
+      </div>
+      <template v-if="project.hasData">
+        <p class="side-project__name">{{ project.source?.name ?? '未命名数据' }}</p>
+        <p class="side-project__meta mono">
+          {{ (project.range?.points ?? 0).toLocaleString() }} pts · {{ project.steps.length }} 步
+        </p>
+        <RouterLink to="/data/jade" class="side-project__link">前往 Jade 导出 →</RouterLink>
+      </template>
+      <p v-else class="side-project__empty">暂无数据，从「XRD 数据预处理」开始。</p>
+    </div>
 
     <footer class="sidebar-foot">
       <button
@@ -471,5 +482,115 @@ watch(
   padding: 0;
   width: 27px;
   justify-content: center;
+}
+
+.side-group + .side-group {
+  margin-top: 4px;
+}
+
+.side-group__label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.side-group__label::-webkit-details-marker {
+  display: none;
+}
+
+.side-group__label::after {
+  content: '›';
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text-3);
+  transition: transform var(--duration) var(--ease);
+}
+
+.side-group[open] .side-group__label::after {
+  transform: rotate(90deg);
+}
+
+.side-group__label:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.side-group__label svg {
+  width: 15px;
+  height: 15px;
+  color: var(--accent);
+}
+
+.side-group__count {
+  margin-left: 2px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.side-project {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--surface-2);
+}
+
+.side-project__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--text-3);
+}
+
+.side-project__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.side-project__dot.is-ok {
+  background: var(--ok);
+}
+
+.side-project__dot.is-warn {
+  background: var(--warn);
+}
+
+.side-project__dot.is-error {
+  background: var(--danger);
+}
+
+.side-project__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.side-project__meta,
+.side-project__empty {
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.side-project__link {
+  font-size: 11px;
+  color: var(--accent);
 }
 </style>

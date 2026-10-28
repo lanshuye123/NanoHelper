@@ -44,8 +44,8 @@ const drawerState = defineModel<DrawerState>('resultState', { default: 'closed' 
 
 const slots = useSlots()
 
-const hasConfig = computed(() => Boolean(slots.source || slots.config || slots.params || slots.more))
-const hasAside = computed(() => Boolean(slots.aside))
+const hasOps = computed(() => Boolean(slots.steps || slots.source || slots.config || slots.params || slots.more))
+const hasPanel = computed(() => Boolean(slots.dashboard || slots.aside))
 
 const eyebrowText = computed(() => {
   if (props.eyebrow) return props.eyebrow
@@ -58,35 +58,39 @@ const eyebrowText = computed(() => {
 </script>
 
 <template>
-  <div class="tool-page" :class="{ 'has-aside': hasAside }">
+  <div class="tool-page">
     <header class="tool-head">
-      <div class="tool-head__row">
+      <div class="tool-head__left">
         <span class="tool-head__eyebrow">
           <span class="tool-head__bar" />
           {{ eyebrowText }}
         </span>
-        <div class="tool-head__tools">
-          <ToolStateActions
-            v-if="showStateActions"
-            :saved-at="savedAt"
-            :restored="restored"
-            :error="stateError"
-            :can-clear="canClear"
-            @reset="emit('reset')"
-            @clear="emit('clear')"
-          />
-          <RouterLink v-if="doc" :to="doc" class="doc-link">
-            <BookOpen />
-            <span>文档</span>
-          </RouterLink>
-        </div>
+        <h1 class="tool-head__title">{{ title }}</h1>
+        <p v-if="subtitle" class="tool-head__subtitle">{{ subtitle }}</p>
       </div>
-      <h1 class="tool-head__title">{{ title }}</h1>
-      <p v-if="subtitle" class="tool-head__subtitle">{{ subtitle }}</p>
+
+      <div class="tool-head__actions">
+        <slot name="actions" />
+        <ToolStateActions
+          v-if="showStateActions"
+          :saved-at="savedAt"
+          :restored="restored"
+          :error="stateError"
+          :can-clear="canClear"
+          @reset="emit('reset')"
+          @clear="emit('clear')"
+        />
+        <RouterLink v-if="doc" :to="doc" class="doc-link">
+          <BookOpen />
+          <span>文档</span>
+        </RouterLink>
+      </div>
     </header>
 
-    <div class="tool-body" :class="{ 'has-aside': hasAside }">
-      <aside v-if="hasConfig" class="tool-config">
+    <div class="workspace" :class="{ 'no-ops': !hasOps, 'no-panel': !hasPanel }">
+      <!-- 左：操作与配置 -->
+      <div v-if="hasOps" class="workspace__ops">
+        <slot name="steps" />
         <slot name="source" />
         <slot name="config" />
         <slot name="params" />
@@ -97,21 +101,36 @@ const eyebrowText = computed(() => {
             <slot name="more" />
           </div>
         </details>
-      </aside>
+      </div>
 
-      <section class="tool-main">
+      <!-- 中：可视化与数据 -->
+      <div class="workspace__view">
         <slot name="input" />
+
+        <section v-if="slots.chart && drawerState === 'closed'" class="view-block">
+          <slot name="chart" />
+        </section>
+
         <slot />
 
-        <div v-if="slots.chart && drawerState === 'closed'" class="result-inline">
-          <slot name="chart" />
-        </div>
+        <section v-if="slots.table" class="view-block">
+          <slot name="table" />
+        </section>
 
         <div v-if="slots.run" class="run-bar">
           <slot name="run" />
         </div>
+
+        <p v-if="slots.tips" class="tips-bar">
+          <slot name="tips" />
+        </p>
+      </div>
+
+      <!-- 右：结果仪表盘 -->
+      <aside v-if="hasPanel" class="workspace__panel">
+        <slot name="dashboard" />
         <slot name="aside" />
-      </section>
+      </aside>
     </div>
 
     <ResultDrawer v-model:state="drawerState" :title="resultTitle" :tabs="resultTabs">
@@ -125,7 +144,7 @@ const eyebrowText = computed(() => {
 
 <style scoped>
 .tool-page {
-  max-width: 1400px;
+  max-width: 1640px;
   margin: 0 auto;
   padding: 18px 20px 32px;
 }
@@ -133,16 +152,16 @@ const eyebrowText = computed(() => {
 /* ---------------------------------------------------------------- head */
 
 .tool-head {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
   margin-bottom: 16px;
 }
 
-.tool-head__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+.tool-head__left {
+  min-width: 0;
 }
 
 .tool-head__eyebrow {
@@ -162,39 +181,38 @@ const eyebrowText = computed(() => {
   background: var(--accent);
 }
 
-.tool-head__tools {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
 .tool-head__title {
-  margin-top: 8px;
-  font-size: 27px;
-  font-weight: 740;
+  margin-top: 6px;
+  font-size: 24px;
+  font-weight: 720;
   letter-spacing: -0.025em;
   color: var(--text);
 }
 
 .tool-head__subtitle {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 12.5px;
   line-height: 1.7;
   color: var(--text-2);
-  max-width: 820px;
+  max-width: 760px;
+}
+
+.tool-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 2px;
 }
 
 .doc-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
+  height: 32px;
   padding: 0 12px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   background: var(--surface);
   color: var(--text-2);
   font-size: 12px;
@@ -216,42 +234,49 @@ const eyebrowText = computed(() => {
   color: var(--accent);
 }
 
-/* ---------------------------------------------------------------- body */
+/* ---------------------------------------------------------------- workspace */
 
-.tool-body {
+.workspace {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: 330px minmax(0, 1fr) 300px;
+  gap: 16px;
   align-items: start;
 }
 
-.tool-config > * {
-  flex: 0 0 auto;
+.workspace.no-ops {
+  grid-template-columns: minmax(0, 1fr) 300px;
 }
 
-.tool-config {
-  position: sticky;
-  top: 10px;
+.workspace.no-panel {
+  grid-template-columns: 330px minmax(0, 1fr);
+}
+
+.workspace.no-ops.no-panel {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace__ops,
+.workspace__view,
+.workspace__panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: calc(100vh - var(--header-h) - var(--status-h) - 34px);
+  gap: 14px;
+  min-width: 0;
+}
+
+.workspace__ops,
+.workspace__panel {
+  position: sticky;
+  top: 10px;
+  max-height: calc(100vh - 150px);
   overflow-y: auto;
   padding-right: 2px;
   scrollbar-width: thin;
 }
 
-.tool-main {
-  min-width: 0;
+.view-block {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.result-inline {
-  display: flex;
-  flex-direction: column;
-  padding: 4px 0;
 }
 
 .run-bar {
@@ -261,15 +286,19 @@ const eyebrowText = computed(() => {
   flex-wrap: wrap;
 }
 
-@media (max-width: 1180px) {
-  .tool-body {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .tool-config {
-    position: static;
-    max-height: none;
-  }
+/* Contextual hint spanning the main workspace. */
+.tips-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--warn) 32%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warn) 10%, var(--surface));
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 /* ---------------------------------------------------------------- more */
@@ -316,16 +345,46 @@ const eyebrowText = computed(() => {
   padding-top: 10px;
 }
 
+/* ---------------------------------------------------------------- responsive */
+
+@media (max-width: 1500px) {
+  .workspace,
+  .workspace.no-ops {
+    grid-template-columns: 330px minmax(0, 1fr);
+  }
+
+  .workspace__panel {
+    grid-column: 1 / -1;
+    position: static;
+    max-height: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .workspace,
+  .workspace.no-ops,
+  .workspace.no-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workspace__ops {
+    position: static;
+    max-height: none;
+  }
+}
+
 @media (max-width: 768px) {
   .tool-page {
     padding: 16px 14px 96px;
   }
 
   .tool-head__title {
-    font-size: 22px;
+    font-size: 20px;
   }
 
-  /* Core actions stay reachable above the safe area. */
   .run-bar {
     position: fixed;
     left: 0;

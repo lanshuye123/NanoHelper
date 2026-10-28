@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowRight,
+  Check,
   ClipboardPaste,
   Database,
   FileOutput,
@@ -15,6 +16,7 @@ import {
   RotateCcw,
   Save,
   Sparkles,
+  Table2,
   Undo2,
   Upload,
 } from 'lucide-vue-next'
@@ -223,6 +225,88 @@ const SPARK_COLORS: Record<string, string> = {
   'dif-demo06': 'var(--plot-4)',
 }
 
+const activeStepId = ref<string | null>(null)
+const activeStep = computed(() => steps.value.find((step) => step.id === activeStepId.value) ?? null)
+
+const tablePage = ref(0)
+const PAGE_SIZE = 20
+
+watch(
+  () => project.derived?.x.length ?? 0,
+  () => {
+    tablePage.value = 0
+  },
+)
+
+const totalPages = computed(() => {
+  const total = project.derived?.x.length ?? 0
+  return Math.max(1, Math.ceil(total / PAGE_SIZE))
+})
+
+const previewRows = computed(() => {
+  const pattern = project.derived
+  if (!pattern) return []
+  const start = tablePage.value * PAGE_SIZE
+  return Array.from(pattern.x.slice(start, start + PAGE_SIZE)).map((x, i) => ({
+    index: start + i + 1,
+    x,
+    y: pattern.y[start + i] ?? 0,
+  }))
+})
+
+/** Cheap local-maximum peak search used for the summary card. */
+const peaks = computed(() => {
+  const pattern = project.derived
+  if (!pattern || pattern.y.length < 5) return []
+  let max = -Infinity
+  for (const value of pattern.y) if (value > max) max = value
+  const floor = max * 0.08
+  const found: { x: number; y: number }[] = []
+  for (let i = 1; i < pattern.y.length - 1; i++) {
+    const value = pattern.y[i]!
+    if (value > pattern.y[i - 1]! && value >= pattern.y[i + 1]! && value > floor) {
+      found.push({ x: pattern.x[i]!, y: value })
+    }
+  }
+  return found.sort((a, b) => b.y - a.y).slice(0, 8)
+})
+
+function stepLabel(step: { type: StepType }): string {
+  return STEP_DEFINITIONS[step.type]?.label ?? step.type
+}
+
+function removeActiveStep() {
+  const step = activeStep.value
+  if (!step) return
+  project.removeStep(step.id)
+  activeStepId.value = null
+}
+
+const pointsText = computed(() => (project.derived?.x.length ?? 0).toLocaleString())
+
+const rangeText = computed(() => {
+  const range = project.derivedRange
+  if (!range) return '—'
+  return `${range.xMin.toFixed(2)} – ${range.xMax.toFixed(2)}`
+})
+
+const maxText = computed(() => {
+  const range = project.derivedRange
+  return range ? range.yMax.toPrecision(6) : '—'
+})
+
+const jadeStatusText = computed(() => {
+  if (!hasData.value) return '—'
+  return project.jadeStep ? '已映射' : '未映射'
+})
+
+const peakText = computed(() => {
+  if (!peaks.value.length) return '—'
+  const head = `${'2θ / X'.padStart(12)}${'强度'.padStart(14)}`
+  const rows = peaks.value.map((peak) => `${peak.x.toFixed(4).padStart(12)}${peak.y.toPrecision(6).padStart(14)}`)
+  return [head, ...rows].join('\n')
+})
+
 function defaultParams(type: StepType): StepParams {
   const range = project.range
   if (type === 'crop' && range) {
@@ -401,6 +485,84 @@ async function openProject(files: File[]) {
     @reset="resetAll"
     @clear="clearPage"
   >
+    <!-- 顶部全局操作 -->
+    <template #actions>
+      <button type="button" class="btn btn--quiet" :disabled="!project.hasData" @click="saveProject">
+        <Save /> 保存
+      </button>
+      <button type="button" class="btn btn--quiet" :disabled="!hasData" @click="goJade">
+        <FileOutput /> 导出
+      </button>
+      <button type="button" class="btn btn--quiet" :disabled="!project.history.length" @click="project.undo()">
+        <Undo2 /> 撤销
+      </button>
+      <button type="button" class="btn btn--quiet" :disabled="!project.future.length" @click="project.redo()">
+        <Redo2 /> 重做
+      </button>
+    </template>
+
+    <!-- 步骤向导：操作与配置 -->
+    <template #steps>
+      <div class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title"><Sparkles /> 处理流程</h2>
+          <span class="panel__hint">{{ steps.length }} 步</span>
+        </div>
+        <div class="panel__body">
+          <ol class="flow">
+            <li class="flow__item" :class="{ 'is-done': hasData }">
+              <span class="flow__dot mono">01</span>
+              <span class="flow__label">数据导入</span>
+              <Check v-if="hasData" class="flow__check" />
+            </li>
+            <li
+              v-for="(step, index) in steps"
+              :key="step.id"
+              class="flow__item"
+              :class="{ 'is-active': activeStepId === step.id, 'is-done': step.enabled }"
+            >
+              <button type="button" class="flow__btn" @click="activeStepId = step.id">
+                <span class="flow__dot mono">{{ String(index + 2).padStart(2, '0') }}</span>
+                <span class="flow__label">{{ stepLabel(step) }}</span>
+                <Check v-if="step.enabled" class="flow__check" />
+              </button>
+            </li>
+            <li class="flow__item">
+              <el-dropdown trigger="click" :disabled="!hasData" @command="onAddStepCommand">
+                <button type="button" class="flow__btn flow__btn--add" :disabled="!hasData">
+                  <Plus /> 添加步骤
+                </button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item v-for="item in addStepItems" :key="item.type" :command="item.type">
+                      <div class="step-menu-item">
+                        <span>{{ item.label }}</span>
+                        <span class="tiny dim">{{ item.description.slice(0, 28) }}</span>
+                      </div>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </li>
+          </ol>
+
+          <StepCard
+            v-if="activeStep"
+            class="active-step"
+            :step="activeStep"
+            :index="steps.findIndex((item) => item.id === (activeStep?.id ?? ''))"
+            :total="steps.length"
+            @update:params="setStepParams(activeStep.id, $event)"
+            @toggle="project.toggleStep(activeStep.id)"
+            @remove="removeActiveStep"
+            @move="project.moveStep(activeStep.id, $event)"
+            @duplicate="project.duplicateStep(activeStep.id)"
+          />
+          <p v-else class="section-note">点击流程中的任意步骤，可就地编辑它的参数。</p>
+        </div>
+      </div>
+    </template>
+
     <!-- 1 · 数据输入 -->
     <template #source>
       <div class="panel">
@@ -622,6 +784,111 @@ async function openProject(files: File[]) {
         查看预处理结果
       </button>
       <button type="button" class="btn" :disabled="!hasData" @click="goJade">导出到 Jade</button>
+    </template>
+
+    <!-- 数据预览表格 -->
+    <template #table>
+      <div class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title"><Table2 /> 数据预览</h2>
+          <span class="panel__hint">{{ (project.derived?.x.length ?? 0).toLocaleString() }} 行</span>
+        </div>
+        <div class="panel__body">
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th class="num">#</th>
+                  <th class="num">X</th>
+                  <th class="num">Y</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in previewRows" :key="row.index">
+                  <td class="num">{{ row.index }}</td>
+                  <td class="num">{{ row.x.toFixed(4) }}</td>
+                  <td class="num">{{ row.y.toPrecision(6) }}</td>
+                </tr>
+                <tr v-if="!previewRows.length">
+                  <td class="text" colspan="3">暂无数据</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pager">
+            <button type="button" class="btn btn--quiet" :disabled="tablePage <= 0" @click="tablePage--">
+              上一页
+            </button>
+            <span class="section-note">{{ tablePage + 1 }} / {{ totalPages }}</span>
+            <button
+              type="button"
+              class="btn btn--quiet"
+              :disabled="tablePage >= totalPages - 1"
+              @click="tablePage++"
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- 右侧仪表盘 -->
+    <template #dashboard>
+      <div class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title">结果摘要</h2>
+        </div>
+        <div class="panel__body">
+          <div class="metric-grid">
+            <div class="metric">
+              <span class="metric__value mono">{{ pointsText }}</span>
+              <span class="metric__label">数据点数</span>
+            </div>
+            <div class="metric">
+              <span class="metric__value mono">{{ peaks.length }}</span>
+              <span class="metric__label">识别峰数</span>
+            </div>
+          </div>
+          <div class="metric-list">
+            <div><span>X 范围</span><b class="mono">{{ rangeText }}</b></div>
+            <div><span>最大强度</span><b class="mono">{{ maxText }}</b></div>
+            <div><span>处理步骤</span><b class="mono">{{ steps.length }}</b></div>
+            <div><span>Jade 状态</span><b>{{ jadeStatusText }}</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title">峰位信息</h2>
+          <span class="panel__hint">Top {{ peaks.length }}</span>
+        </div>
+        <div class="panel__body">
+          <pre v-if="peaks.length" class="code-surface"><code>{{ peakText }}</code></pre>
+          <p v-else class="section-note">暂无数据，或未检测到明显衍射峰。</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title">导出数据</h2>
+        </div>
+        <div class="panel__body export-grid">
+          <button type="button" class="btn" :disabled="!hasData" @click="goJade">Jade .xy</button>
+          <button type="button" class="btn" :disabled="!hasData" @click="saveProject">工程 .json</button>
+          <button type="button" class="btn" :disabled="!hasData" @click="router.push('/data/dif')">
+            DIF → XY
+          </button>
+          <button type="button" class="btn" :disabled="!hasData" @click="copySummary">复制摘要</button>
+        </div>
+      </div>
+    </template>
+
+    <!-- 上下文提示 -->
+    <template #tips>
+      小提示：在左侧流程中选择步骤即可就地调参，右侧图表与下方数据预览会同步更新；顶部「撤销 / 重做」可逐步回退。
     </template>
 
     <!-- 结果 · 图表 -->
@@ -902,5 +1169,157 @@ async function openProject(files: File[]) {
 .next-link small {
   font-size: 11px;
   color: var(--text-3);
+}
+
+/* ---------------------------------------------------------------- flow */
+
+.flow {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.flow__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-left: 2px solid transparent;
+  border-radius: 0 8px 8px 0;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.flow__item.is-active {
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.flow__item.is-done .flow__dot {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.flow__btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.flow__dot {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 10px;
+}
+
+.flow__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flow__check {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: var(--ok);
+}
+
+.flow__btn--add {
+  color: var(--text-3);
+}
+
+.flow__btn--add:hover {
+  color: var(--accent);
+}
+
+.active-step {
+  margin-top: 12px;
+}
+
+/* ---------------------------------------------------------------- metrics */
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.metric {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.metric__value {
+  display: block;
+  font-size: 22px;
+  font-weight: 720;
+  line-height: 1.2;
+  color: var(--accent);
+}
+
+.metric__label {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.metric-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+.metric-list > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.metric-list span {
+  color: var(--text-3);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.export-grid :deep(.btn) {
+  justify-content: center;
 }
 </style>
