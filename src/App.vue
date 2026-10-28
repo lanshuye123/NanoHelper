@@ -33,7 +33,7 @@ watch(
     <div class="app-body">
       <AppSidebar v-if="!isHome" />
       <main class="app-content" :class="{ 'is-home': isHome }">
-        <div class="app-deco" aria-hidden="true">
+        <div v-if="isHome" class="app-deco" aria-hidden="true">
           <svg viewBox="0 0 240 240" class="app-deco__shape">
             <path d="M120 14 L214 68 L214 172 L120 226 L26 172 L26 68 Z" />
             <path d="M120 68 L167 95 L167 145 L120 172 L73 145 L73 95 Z" />
@@ -48,7 +48,7 @@ watch(
       </main>
     </div>
 
-    <StatusBar />
+    <StatusBar v-if="isHome" />
     <CommandPalette />
     <div v-if="settings.mobileNavOpen" class="nav-overlay" @click="settings.mobileNavOpen = false" />
   </div>
@@ -67,10 +67,9 @@ watch(
 .app-body {
   flex: 1;
   display: flex;
-  gap: 10px;
   min-height: 0;
-  padding: 10px;
   overflow: hidden;
+  background: var(--workspace);
 }
 
 .app-content {
@@ -80,10 +79,7 @@ watch(
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  background: var(--workspace);
   scrollbar-gutter: stable;
 }
 
@@ -113,10 +109,7 @@ watch(
 }
 
 .app-content.is-home {
-  background: transparent;
-  border-color: transparent;
-  border-radius: 0;
-  box-shadow: none;
+  background: var(--bg);
   scrollbar-gutter: auto;
 }
 
@@ -138,15 +131,8 @@ watch(
 }
 
 @media (max-width: 900px) {
-  .app-body {
-    padding: 0;
-    gap: 0;
-  }
-
   .app-content {
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
+    background: var(--workspace);
   }
 }
 

@@ -33,6 +33,12 @@ const shortcuts = [
 
 <template>
   <div class="page about">
+    <nav class="about-crumb" aria-label="面包屑">
+      <RouterLink to="/">工作台</RouterLink>
+      <span>/</span>
+      <span>关于</span>
+    </nav>
+
     <header id="about-overview" class="about-hero">
       <span class="about-hero__eyebrow"><Sparkles /> ABOUT</span>
       <h1>CrystalToolBox</h1>
@@ -152,12 +158,31 @@ const shortcuts = [
 
 <style scoped>
 .about {
-  max-width: 1180px;
+  max-width: 1480px;
+  padding: 18px 24px 48px;
 }
 
 .about section[id],
 .about header[id] {
   scroll-margin-top: 12px;
+}
+
+.about-crumb {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+.about-crumb a {
+  color: var(--text-3);
+  text-decoration: none;
+}
+
+.about-crumb a:hover {
+  color: var(--accent);
 }
 
 .about-hero {
@@ -329,7 +354,11 @@ const shortcuts = [
   margin-left: auto;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 900px) {
+  .about {
+    padding: 14px 14px 32px;
+  }
+
   .about-grid {
     grid-template-columns: 1fr;
   }

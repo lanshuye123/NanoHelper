@@ -12,18 +12,18 @@
   --font-mono: ui-monospace, 'JetBrains Mono', 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
 
   /* geometry */
-  --topbar-h: 64px;
+  --topbar-h: 60px;
   --header-h: var(--topbar-h);
-  --status-h: 26px;
-  --sidebar-w: 250px;
+  --status-h: 24px;
+  --sidebar-w: 264px;
   --sidebar-w-collapsed: 64px;
   --content-max: 1680px;
-  --shell-gap: 12px;
+  --shell-gap: 0px;
 
-  --radius: 14px;
-  --radius-sm: 10px;
+  --radius: 10px;
+  --radius-sm: 8px;
   --radius-xs: 6px;
-  --radius-lg: 20px;
+  --radius-lg: 12px;
   --radius-pill: 999px;
 
   /* type scale */
@@ -53,26 +53,27 @@
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --bg: #edf4fb;
-  --bg-soft: #f4f9fe;
+  --bg: #f5f7fb;
+  --bg-soft: #f8fafd;
+  --workspace: #f7f9fc;
   --surface: #ffffff;
-  --surface-2: #f4f8fd;
-  --surface-3: #e9f2fb;
-  --surface-hover: #eef6fe;
+  --surface-2: #f5f8fd;
+  --surface-3: #eaf1fb;
+  --surface-hover: #f1f6fe;
 
-  --border: #d8e5f2;
-  --border-soft: #e7f0fa;
-  --border-strong: #b6cee5;
+  --border: #e3e9f2;
+  --border-soft: #edf1f7;
+  --border-strong: #cbd7e6;
 
-  --text: #102a43;
-  --text-2: #4a6580;
-  --text-3: #7b91a8;
+  --text: #172b42;
+  --text-2: #4d6178;
+  --text-3: #7d8fa5;
 
-  --accent: #2563eb;
-  --accent-strong: #1d4ed8;
-  --accent-2: #60a5fa;
-  --accent-soft: rgba(37, 99, 235, 0.09);
-  --accent-line: rgba(37, 99, 235, 0.3);
+  --accent: #2f6fe8;
+  --accent-strong: #1f5bd4;
+  --accent-2: #5b9af7;
+  --accent-soft: rgba(47, 111, 232, 0.09);
+  --accent-line: rgba(47, 111, 232, 0.3);
 
   --ok: #1f8a5f;
   --ok-soft: rgba(31, 138, 95, 0.1);
@@ -83,10 +84,10 @@
   --info: #2f7fc1;
 
   /* module colours */
-  --module-data: #2563eb;
-  --module-diffraction: #0ea5a4;
-  --module-crystal: #7c3aed;
-  --module-micro: #c2410c;
+  --module-data: #2f6fe8;
+  --module-diffraction: #0f9f9a;
+  --module-crystal: #7752d6;
+  --module-micro: #c25b1f;
   --module-docs: #0891b2;
   --module-about: #64748b;
 
@@ -102,25 +103,25 @@
   --chart-bg: #ffffff;
 
   /* shadows — kept deliberately light so borders do the separating */
-  --shadow-sm: 0 1px 2px rgba(21, 62, 99, 0.06);
-  --shadow-card: 0 2px 10px rgba(21, 62, 99, 0.055);
-  --shadow: 0 12px 30px rgba(21, 62, 99, 0.12);
+  --shadow-sm: 0 1px 2px rgba(23, 43, 66, 0.04);
+  --shadow-card: 0 1px 3px rgba(23, 43, 66, 0.04);
+  --shadow: 0 14px 34px rgba(23, 43, 66, 0.14);
   --glow: 0 0 0 1px rgba(47, 127, 193, 0.22), 0 0 26px rgba(47, 127, 193, 0.07);
 
   --code-bg: #f2f7fd;
 
   /* top navbar */
-  --nav-bg-start: #174f7f;
-  --nav-bg-end: #174f7f;
-  --nav-divider: #7fc4ef;
-  --nav-text: #f3f9ff;
-  --nav-muted: rgba(240, 249, 255, 0.68);
-  --nav-control-bg: rgba(255, 255, 255, 0.12);
-  --nav-control-border: rgba(255, 255, 255, 0.26);
-  --nav-control-hover: rgba(255, 255, 255, 0.2);
-  --nav-active-bg: #ffffff;
-  --nav-active-text: #17527f;
-  --nav-brand-sub: rgba(232, 246, 255, 0.72);
+  --nav-bg-start: #1b4575;
+  --nav-bg-end: #1b4575;
+  --nav-divider: transparent;
+  --nav-text: #f5f9ff;
+  --nav-muted: rgba(231, 242, 255, 0.7);
+  --nav-control-bg: rgba(255, 255, 255, 0.075);
+  --nav-control-border: rgba(255, 255, 255, 0.1);
+  --nav-control-hover: rgba(255, 255, 255, 0.14);
+  --nav-active-bg: #12395f;
+  --nav-active-text: #ffffff;
+  --nav-brand-sub: rgba(220, 236, 255, 0.64);
 
   /* status bar */
   --status-bg: #102a43;
@@ -138,6 +139,7 @@
 
   --bg: #07121d;
   --bg-soft: #0a1826;
+  --workspace: #091725;
   --surface: #0e1e2e;
   --surface-2: #132538;
   --surface-3: #193048;
@@ -190,16 +192,16 @@
 
   --code-bg: #0a1826;
 
-  --nav-bg-start: #06182a;
-  --nav-bg-end: #06182a;
-  --nav-divider: #2b7fb8;
+  --nav-bg-start: #081c30;
+  --nav-bg-end: #081c30;
+  --nav-divider: transparent;
   --nav-text: #eef7ff;
   --nav-muted: rgba(214, 235, 252, 0.62);
   --nav-control-bg: rgba(255, 255, 255, 0.07);
   --nav-control-border: rgba(255, 255, 255, 0.18);
   --nav-control-hover: rgba(255, 255, 255, 0.13);
-  --nav-active-bg: #5aa9e6;
-  --nav-active-text: #041422;
+  --nav-active-bg: #112f4c;
+  --nav-active-text: #ffffff;
   --nav-brand-sub: rgba(190, 222, 248, 0.66);
 
   --status-bg: #050f18;

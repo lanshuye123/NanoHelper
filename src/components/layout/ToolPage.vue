@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, useSlots } from 'vue'
-import { BookOpen } from 'lucide-vue-next'
+import { BookOpen, ChevronRight, LineChart } from 'lucide-vue-next'
 import ResultDrawer from '@/components/tool/ResultDrawer.vue'
 import ToolStateActions from '@/components/layout/ToolStateActions.vue'
 import { TOOL_GROUPS, tools } from '@/tools/registry'
@@ -11,6 +11,10 @@ const props = withDefaults(
     toolId: string
     title: string
     subtitle?: string
+    /** Optional short status shown next to the page title. */
+    badge?: string
+    /** Wrap the chart slot in a titled panel. Disable when the page supplies its own. */
+    chartFrame?: boolean
     /** Optional override; otherwise derived from the tool registry. */
     eyebrow?: string
     doc?: string
@@ -25,6 +29,8 @@ const props = withDefaults(
   }>(),
   {
     subtitle: '',
+    badge: '',
+    chartFrame: true,
     eyebrow: '',
     doc: '',
     resultTitle: '结果',
@@ -44,35 +50,37 @@ const drawerState = defineModel<DrawerState>('resultState', { default: 'closed' 
 
 const slots = useSlots()
 
+const meta = computed(() => tools.find((tool) => tool.id === props.toolId))
 const hasOps = computed(() => Boolean(slots.steps || slots.source || slots.config || slots.params || slots.more))
 const hasPanel = computed(() => Boolean(slots.dashboard || slots.aside))
-/** Pages without charts or tables look empty at full width — keep them centred. */
-const isCompact = computed(() => !slots.chart && !slots.table)
-
-const eyebrowText = computed(() => {
-  if (props.eyebrow) return props.eyebrow
-  const meta = tools.find((tool) => tool.id === props.toolId)
-  if (!meta) return ''
-  const group = TOOL_GROUPS.find((item) => item.key === meta.group)
-  const index = tools.filter((tool) => tool.group === meta.group).findIndex((tool) => tool.id === meta.id)
-  return `${group?.label ?? ''} · ${String(index + 1).padStart(2, '0')}`
+const groupLabel = computed(() => {
+  if (!meta.value) return ''
+  return TOOL_GROUPS.find((group) => group.key === meta.value?.group)?.label ?? ''
 })
+
+const eyebrowText = computed(() => props.eyebrow || groupLabel.value)
 </script>
 
 <template>
   <div class="tool-page">
     <header class="tool-head">
       <div class="tool-head__left">
-        <span class="tool-head__eyebrow">
-          <span class="tool-head__bar" />
-          {{ eyebrowText }}
-        </span>
-        <h1 class="tool-head__title">{{ title }}</h1>
+        <nav class="tool-crumb" aria-label="面包屑">
+          <RouterLink to="/">工作台</RouterLink>
+          <ChevronRight aria-hidden="true" />
+          <span>{{ eyebrowText }}</span>
+          <ChevronRight aria-hidden="true" />
+          <span class="tool-crumb__current">{{ title }}</span>
+        </nav>
+
+        <div class="tool-head__title-row">
+          <h1 class="tool-head__title">{{ title }}</h1>
+          <span v-if="badge" class="tool-head__badge">{{ badge }}</span>
+        </div>
         <p v-if="subtitle" class="tool-head__subtitle">{{ subtitle }}</p>
       </div>
 
       <div class="tool-head__actions">
-        <slot name="actions" />
         <ToolStateActions
           v-if="showStateActions"
           :saved-at="savedAt"
@@ -82,14 +90,22 @@ const eyebrowText = computed(() => {
           @reset="emit('reset')"
           @clear="emit('clear')"
         />
-        <RouterLink v-if="doc" :to="doc" class="doc-link">
+        <slot name="actions" />
+        <slot v-if="slots.run" name="run" />
+        <RouterLink
+          v-if="doc"
+          :to="doc"
+          class="doc-link"
+          :title="`查看 ${title} 的使用文档`"
+          :aria-label="`查看 ${title} 的使用文档`"
+        >
           <BookOpen />
-          <span>文档</span>
+          <span class="doc-link__text">使用文档</span>
         </RouterLink>
       </div>
     </header>
 
-    <div class="workspace" :class="{ 'no-ops': !hasOps, 'no-panel': !hasPanel, 'is-compact': isCompact }">
+    <div class="workspace" :class="{ 'no-ops': !hasOps, 'no-panel': !hasPanel }">
       <!-- 左：操作与配置 -->
       <div v-if="hasOps" class="workspace__ops">
         <slot name="steps" />
@@ -110,7 +126,15 @@ const eyebrowText = computed(() => {
         <slot name="input" />
 
         <section v-if="slots.chart && drawerState === 'closed'" class="view-block">
-          <slot name="chart" />
+          <div v-if="chartFrame" class="panel chart-shell">
+            <div class="panel__head">
+              <h2 class="panel__title"><LineChart /> 分析图谱</h2>
+            </div>
+            <div class="panel__body chart-shell__body">
+              <slot name="chart" />
+            </div>
+          </div>
+          <slot v-else name="chart" />
         </section>
 
         <slot />
@@ -118,14 +142,6 @@ const eyebrowText = computed(() => {
         <section v-if="slots.table" class="view-block">
           <slot name="table" />
         </section>
-
-        <div v-if="slots.run" class="run-bar">
-          <slot name="run" />
-        </div>
-
-        <p v-if="slots.tips" class="tips-bar">
-          <slot name="tips" />
-        </p>
       </div>
 
       <!-- 右：结果仪表盘 -->
@@ -134,6 +150,10 @@ const eyebrowText = computed(() => {
         <slot name="aside" />
       </aside>
     </div>
+
+    <p v-if="slots.tips" class="tips-bar">
+      <slot name="tips" />
+    </p>
 
     <ResultDrawer v-model:state="drawerState" :title="resultTitle" :tabs="resultTabs">
       <template #chart><slot name="chart" /></template>
@@ -146,9 +166,10 @@ const eyebrowText = computed(() => {
 
 <style scoped>
 .tool-page {
-  max-width: 1640px;
+  width: 100%;
+  max-width: 1720px;
   margin: 0 auto;
-  padding: 16px 20px 24px;
+  padding: 14px 24px 26px;
 }
 
 /* ---------------------------------------------------------------- head */
@@ -157,62 +178,115 @@ const eyebrowText = computed(() => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
-  flex-wrap: wrap;
+  gap: 24px;
+  flex-wrap: nowrap;
   margin-bottom: 16px;
 }
 
 .tool-head__left {
+  flex: 1 1 460px;
   min-width: 0;
 }
 
-.tool-head__eyebrow {
-  display: inline-flex;
+.tool-crumb {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  gap: 7px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
   color: var(--text-3);
 }
 
-.tool-head__bar {
-  width: 3px;
-  height: 14px;
-  border-radius: 2px;
-  background: var(--accent);
+.tool-crumb a {
+  color: var(--text-3);
+  text-decoration: none;
+}
+
+.tool-crumb a:hover {
+  color: var(--accent);
+}
+
+.tool-crumb svg {
+  width: 12px;
+  height: 12px;
+  color: #a9b6c7;
+}
+
+.tool-crumb__current {
+  color: var(--text-2);
+}
+
+.tool-head__title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
 }
 
 .tool-head__title {
-  margin-top: 6px;
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 720;
-  letter-spacing: -0.025em;
+  line-height: 1.22;
+  letter-spacing: -0.03em;
   color: var(--text);
+}
+
+.tool-head__badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 7px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .tool-head__subtitle {
   margin-top: 4px;
   font-size: 12.5px;
-  line-height: 1.7;
+  line-height: 1.65;
   color: var(--text-2);
-  max-width: 760px;
+  max-width: 680px;
 }
 
 .tool-head__actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   flex-wrap: wrap;
-  padding-top: 2px;
+  flex: 0 1 640px;
+  min-width: 0;
+  max-width: 640px;
+  margin-left: auto;
+  padding-top: 20px;
+}
+
+.tool-head__actions :deep(.btn--lg) {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+
+.tool-head__actions :deep(.el-button) {
+  height: 36px;
+  font-size: 12px;
+}
+
+.tool-head__actions :deep(.el-button--small) {
+  height: 36px;
 }
 
 .doc-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -221,45 +295,46 @@ const eyebrowText = computed(() => {
   text-decoration: none;
   transition:
     background var(--duration) var(--ease),
+    border-color var(--duration) var(--ease),
     color var(--duration) var(--ease);
 }
 
 .doc-link:hover {
   background: var(--surface-2);
+  border-color: var(--accent-line);
   color: var(--accent);
   text-decoration: none;
 }
 
 .doc-link svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   color: var(--accent);
+}
+
+.doc-link__text {
+  display: none;
 }
 
 /* ---------------------------------------------------------------- workspace */
 
 .workspace {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr) 292px;
+  grid-template-columns: 300px minmax(0, 1fr) 372px;
   gap: 16px;
   align-items: start;
 }
 
 .workspace.no-ops {
-  grid-template-columns: minmax(0, 1fr) 292px;
+  grid-template-columns: minmax(0, 1fr) 372px;
 }
 
 .workspace.no-panel {
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 300px minmax(0, 1fr);
 }
 
 .workspace.no-ops.no-panel {
   grid-template-columns: minmax(0, 1fr);
-}
-
-.workspace.is-compact {
-  max-width: 1180px;
-  margin: 0 auto;
 }
 
 .workspace__ops,
@@ -267,58 +342,57 @@ const eyebrowText = computed(() => {
 .workspace__panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
 }
 
 .workspace__ops,
 .workspace__panel {
   position: sticky;
-  top: 10px;
-  max-height: calc(100vh - 150px);
+  top: 16px;
+  max-height: calc(100vh - var(--topbar-h) - 40px);
   overflow-y: auto;
-  padding-right: 2px;
+  padding-right: 1px;
   scrollbar-width: thin;
 }
 
 .view-block {
   display: flex;
   flex-direction: column;
+  gap: 14px;
 }
 
-.run-bar {
+.chart-shell {
+  overflow: hidden;
+}
+
+.chart-shell__body {
+  padding: 12px 14px 12px;
+}
+
+/* Contextual hint spanning the whole workspace. */
+.tips-bar {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* Contextual hint spanning the main workspace. */
-.tips-bar {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 0;
-  padding: 10px 14px;
-  border: 1px solid color-mix(in srgb, var(--warn) 32%, transparent);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--warn) 10%, var(--surface));
-  color: var(--text-2);
-  font-size: 12px;
+  margin: 14px 0 0;
+  padding: 2px 2px 0;
+  color: var(--text-3);
+  font-size: 11.5px;
   line-height: 1.6;
 }
 
 /* ---------------------------------------------------------------- more */
 
 .more {
-  border-top: 1px dashed var(--border);
+  padding: 0 2px;
 }
 
 .more__summary {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 0 2px;
+  padding: 8px 0 2px;
   color: var(--text-3);
   font-size: 12px;
   cursor: pointer;
@@ -348,16 +422,16 @@ const eyebrowText = computed(() => {
 .more__body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   padding-top: 10px;
 }
 
 /* ---------------------------------------------------------------- responsive */
 
-@media (max-width: 1500px) {
+@media (max-width: 1340px) {
   .workspace,
   .workspace.no-ops {
-    grid-template-columns: 320px minmax(0, 1fr);
+    grid-template-columns: 290px minmax(0, 1fr);
   }
 
   .workspace__panel {
@@ -365,12 +439,21 @@ const eyebrowText = computed(() => {
     position: static;
     max-height: none;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
   }
 }
 
 @media (max-width: 1100px) {
+  .tool-head {
+    flex-wrap: wrap;
+  }
+
+  .tool-head__actions {
+    max-width: none;
+    padding-top: 0;
+  }
+
   .workspace,
   .workspace.no-ops,
   .workspace.no-panel {
@@ -383,30 +466,40 @@ const eyebrowText = computed(() => {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .tool-page {
-    padding: 16px 14px 96px;
+    padding: 14px 14px 28px;
+  }
+
+  .tool-head {
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
   }
 
   .tool-head__title {
-    font-size: 20px;
+    font-size: 22px;
   }
 
-  .run-bar {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 45;
-    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+  .tool-head__actions {
+    padding-top: 0;
+    justify-content: flex-start;
+    width: 100%;
   }
 
-  .run-bar :deep(.btn),
-  .run-bar :deep(.el-button) {
-    flex: 1 1 auto;
-    min-height: 44px;
+  .tool-head__actions {
+    max-width: none;
+  }
+
+  .doc-link__text {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-crumb a,
+  .more__summary::before {
+    transition: none;
   }
 }
 </style>

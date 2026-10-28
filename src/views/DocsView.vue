@@ -2,23 +2,18 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, ArrowRight, BookOpen, Menu, Search } from 'lucide-vue-next'
+import { ArrowLeft, ArrowRight } from 'lucide-vue-next'
 import { docPath, docsBySection, getDoc, prevNext, sectionLabel, type DocEntry } from '@/docs/manifest'
-import { docNavGroups } from '@/config/navigation'
-import UiInput from '@/components/ui/UiInput.vue'
 import { loadDocSource, renderDoc, type Heading } from '@/docs/render'
-import { useSettingsStore } from '@/stores/settings'
 
 const route = useRoute()
 const router = useRouter()
-const settings = useSettingsStore()
 
 const html = ref('')
 const headings = ref<Heading[]>([])
 const loading = ref(false)
 const error = ref('')
 const activeHeading = ref('')
-const docQuery = ref('')
 
 const current = computed(() =>
   getDoc(route.params.section as string | undefined, route.params.slug as string | undefined),
@@ -57,19 +52,6 @@ watch(
   },
   { immediate: true },
 )
-
-const filteredDocGroups = computed(() => {
-  const q = docQuery.value.trim().toLowerCase()
-  if (!q) return docNavGroups
-  return docNavGroups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((doc) =>
-        [doc.title, doc.description, ...(doc.keywords ?? [])].join(' ').toLowerCase().includes(q),
-      ),
-    }))
-    .filter((group) => group.items.length > 0)
-})
 
 function scrollTo(id: string) {
   const el = document.getElementById(id)
@@ -127,46 +109,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="docs-page">
-    <aside class="docs-nav" aria-label="文档目录">
-      <div class="docs-nav__search">
-        <UiInput v-model="docQuery" type="search" placeholder="搜索文档…" size="sm">
-          <template #prefix><Search /></template>
-        </UiInput>
-      </div>
-      <nav class="docs-nav__list">
-        <details
-          v-for="group in filteredDocGroups"
-          :key="group.key"
-          class="docs-nav__group"
-          :open="
-            group.items.some((doc) => doc.section === route.params.section && doc.slug === route.params.slug) ||
-            group.key === 'userguide'
-          "
-        >
-          <summary class="docs-nav__group-label">
-            <component :is="group.icon" />
-            <span>{{ group.label }}</span>
-          </summary>
-          <RouterLink
-            v-for="doc in group.items"
-            :key="doc.path"
-            :to="doc.path"
-            class="docs-nav__item"
-            :class="{ 'is-active': route.params.section === doc.section && route.params.slug === doc.slug }"
-          >
-            {{ doc.title }}
-          </RouterLink>
-        </details>
-        <p v-if="!filteredDocGroups.length" class="docs-nav__empty">没有匹配的文档</p>
-      </nav>
-    </aside>
-
     <article v-if="current" class="docs-article">
       <header class="docs-head">
-        <button class="docs-nav-toggle" type="button" @click="settings.toggleMobileNav()">
-          <Menu />
-          <span>目录</span>
-        </button>
         <nav class="docs-crumb" aria-label="面包屑">
           <RouterLink to="/">首页</RouterLink>
           <span class="crumb-sep">/</span>
@@ -234,11 +178,11 @@ onBeforeUnmount(() => {
 <style scoped>
 .docs-page {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr) 200px;
-  gap: 24px;
-  max-width: 1420px;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: 28px;
+  max-width: 1560px;
   margin: 0 auto;
-  padding: 18px 20px 48px;
+  padding: 18px 24px 48px;
   align-items: start;
 }
 
@@ -377,11 +321,16 @@ onBeforeUnmount(() => {
 
 .docs-article {
   min-width: 0;
+  padding: 22px 28px 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
 
 .docs-head {
   position: relative;
-  padding: 0 0 18px;
+  padding: 0 0 17px;
   margin-bottom: 20px;
   border-bottom: 1px solid var(--border-soft);
 }
@@ -426,29 +375,6 @@ onBeforeUnmount(() => {
   gap: 6px;
   margin-top: 11px;
   flex-wrap: wrap;
-}
-
-.docs-nav-toggle {
-  display: none;
-  align-items: center;
-  gap: 5px;
-  position: absolute;
-  top: 0;
-  right: 0;
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--accent-line);
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  color: var(--accent);
-  font-family: inherit;
-  font-size: 10.5px;
-  cursor: pointer;
-}
-
-.docs-nav-toggle svg {
-  width: 13px;
-  height: 13px;
 }
 
 .docs-loading {
@@ -573,32 +499,28 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 1340px) {
-  .docs-page {
-    grid-template-columns: 250px minmax(0, 1fr);
-  }
-
   .docs-toc {
     display: none;
   }
-}
 
-@media (max-width: 980px) {
   .docs-page {
     grid-template-columns: minmax(0, 1fr);
   }
+}
 
-  .docs-nav {
-    display: none;
+@media (max-width: 1024px) {
+  .docs-page {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 900px) {
   .docs-page {
-    padding: 16px 14px 40px;
+    padding: 14px 14px 30px;
   }
 
-  .docs-nav-toggle {
-    display: none;
+  .docs-article {
+    padding: 18px 16px 22px;
   }
 
   .docs-head h1 {

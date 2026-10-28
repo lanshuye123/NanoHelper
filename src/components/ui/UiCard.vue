@@ -59,7 +59,8 @@ withDefaults(
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px;
+  min-height: 50px;
+  padding: 11px 16px;
   border-bottom: 1px solid var(--border-soft);
 }
 
@@ -70,18 +71,18 @@ withDefaults(
   margin: 0;
   font-size: 13.5px;
   font-weight: 650;
-  letter-spacing: 0.005em;
+  letter-spacing: 0;
   color: var(--text);
 }
 
 .ui-card__icon {
-  width: 17px;
-  height: 17px;
+  width: 16px;
+  height: 16px;
   color: var(--accent);
 }
 
 .ui-card__hint {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 400;
   color: var(--text-3);
 }
