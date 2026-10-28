@@ -556,7 +556,7 @@ async function clearPage() {
         x-unit="°"
         y-label="Counts"
         y-unit="counts"
-        :height="320"
+        :height="380"
         :markers="markers"
       />
       <SciChart
@@ -565,7 +565,7 @@ async function clearPage() {
         x-label="sin θ"
         y-label="β cos θ"
         y-unit="rad"
-        :height="240"
+        :height="260"
         :show-legend="true"
         :include-zero="false"
       />

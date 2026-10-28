@@ -503,7 +503,7 @@ const drawer = ref<DrawerState>('closed')
         x-unit="°"
         y-label="Intensity"
         y-unit="counts"
-        :height="320"
+        :height="380"
       />
     </template>
 

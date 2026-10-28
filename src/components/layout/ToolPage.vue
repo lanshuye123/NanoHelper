@@ -46,6 +46,8 @@ const slots = useSlots()
 
 const hasOps = computed(() => Boolean(slots.steps || slots.source || slots.config || slots.params || slots.more))
 const hasPanel = computed(() => Boolean(slots.dashboard || slots.aside))
+/** Pages without charts or tables look empty at full width — keep them centred. */
+const isCompact = computed(() => !slots.chart && !slots.table)
 
 const eyebrowText = computed(() => {
   if (props.eyebrow) return props.eyebrow
@@ -87,7 +89,7 @@ const eyebrowText = computed(() => {
       </div>
     </header>
 
-    <div class="workspace" :class="{ 'no-ops': !hasOps, 'no-panel': !hasPanel }">
+    <div class="workspace" :class="{ 'no-ops': !hasOps, 'no-panel': !hasPanel, 'is-compact': isCompact }">
       <!-- 左：操作与配置 -->
       <div v-if="hasOps" class="workspace__ops">
         <slot name="steps" />
@@ -146,7 +148,7 @@ const eyebrowText = computed(() => {
 .tool-page {
   max-width: 1640px;
   margin: 0 auto;
-  padding: 18px 20px 32px;
+  padding: 16px 20px 24px;
 }
 
 /* ---------------------------------------------------------------- head */
@@ -238,21 +240,26 @@ const eyebrowText = computed(() => {
 
 .workspace {
   display: grid;
-  grid-template-columns: 330px minmax(0, 1fr) 300px;
+  grid-template-columns: 320px minmax(0, 1fr) 292px;
   gap: 16px;
   align-items: start;
 }
 
 .workspace.no-ops {
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) 292px;
 }
 
 .workspace.no-panel {
-  grid-template-columns: 330px minmax(0, 1fr);
+  grid-template-columns: 320px minmax(0, 1fr);
 }
 
 .workspace.no-ops.no-panel {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace.is-compact {
+  max-width: 1180px;
+  margin: 0 auto;
 }
 
 .workspace__ops,
@@ -260,7 +267,7 @@ const eyebrowText = computed(() => {
 .workspace__panel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
 }
 
@@ -350,7 +357,7 @@ const eyebrowText = computed(() => {
 @media (max-width: 1500px) {
   .workspace,
   .workspace.no-ops {
-    grid-template-columns: 330px minmax(0, 1fr);
+    grid-template-columns: 320px minmax(0, 1fr);
   }
 
   .workspace__panel {
@@ -359,7 +366,7 @@ const eyebrowText = computed(() => {
     max-height: none;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 14px;
+    gap: 12px;
   }
 }
 

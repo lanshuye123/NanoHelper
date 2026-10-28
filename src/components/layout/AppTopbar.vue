@@ -70,9 +70,9 @@ const activeKey = computed(() => {
       </nav>
 
       <div class="topbar-actions">
-        <button type="button" class="nav-search" title="搜索工具与文档（Ctrl / ⌘ + K）" @click="openSearch()">
+        <button type="button" class="nav-search" title="搜索功能、文件、帮助（Ctrl / ⌘ + K）" @click="openSearch()">
           <Search class="nav-search__icon" />
-          <span class="nav-search__text">搜索</span>
+          <span class="nav-search__text">搜索功能、文件、帮助…</span>
           <kbd class="nav-search__kbd">Ctrl K</kbd>
         </button>
 
@@ -297,6 +297,21 @@ const activeKey = computed(() => {
   height: 15px;
 }
 
+.nav-search {
+  width: clamp(160px, 22vw, 300px);
+  justify-content: flex-start;
+  cursor: text;
+}
+
+.nav-search__text {
+  flex: 1 1 auto;
+  text-align: left;
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 1280px) {
   .module-tab {
     padding: 0 9px;
@@ -328,6 +343,14 @@ const activeKey = computed(() => {
 }
 
 @media (max-width: 1080px) {
+  .nav-search__text {
+    display: none;
+  }
+
+  .nav-search {
+    width: auto;
+  }
+
   .brand__copy small {
     display: none;
   }

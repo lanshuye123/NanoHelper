@@ -59,7 +59,7 @@ withDefaults(
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border-soft);
 }
 
@@ -93,7 +93,7 @@ withDefaults(
 }
 
 .ui-card__body {
-  padding: 18px;
+  padding: 16px;
 }
 
 .ui-card__body:empty {

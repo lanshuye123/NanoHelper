@@ -3,14 +3,24 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
+  Activity,
   ArrowRight,
   Check,
+  ChevronRight,
   ClipboardPaste,
   Database,
+  Download,
   FileOutput,
   FlaskConical,
+  GitBranch,
   Grid3x3,
   FolderOpen,
+  LineChart,
+  Map,
+  Minus,
+  Scaling,
+  Scissors,
+  Waves,
   Plus,
   Redo2,
   RotateCcw,
@@ -123,12 +133,16 @@ const stats = computed(() => {
   ]
 })
 
+/** 图谱显示模式：原始 + 处理对比，或仅看处理后曲线。 */
+const chartMode = ref<'both' | 'processed'>('both')
+const chartRef = ref<{ reset: () => void; exportPNG: (filename?: string) => void } | null>(null)
+
 const chartSeries = computed<ChartSeries[]>(() => {
   const series: ChartSeries[] = []
   const mapping = project.jadeMapping
   const input = project.jadeStep ? project.patternBeforeJade : project.raw
   const compared = input && mapping ? applyMapping(input, mapping) : input
-  const showInput = project.steps.some((s) => s.enabled && s.type !== 'jade-map')
+  const showInput = chartMode.value === 'both' && project.steps.some((s) => s.enabled && s.type !== 'jade-map')
   if (compared && showInput) {
     series.push({
       label: mapping ? '映射输入' : '原始',
@@ -229,10 +243,10 @@ const activeStepId = ref<string | null>(null)
 const activeStep = computed(() => steps.value.find((step) => step.id === activeStepId.value) ?? null)
 
 const tablePage = ref(0)
-const PAGE_SIZE = 20
+const pageSize = ref(20)
 
 watch(
-  () => project.derived?.x.length ?? 0,
+  () => [project.derived?.x.length ?? 0, pageSize.value] as const,
   () => {
     tablePage.value = 0
   },
@@ -240,18 +254,35 @@ watch(
 
 const totalPages = computed(() => {
   const total = project.derived?.x.length ?? 0
-  return Math.max(1, Math.ceil(total / PAGE_SIZE))
+  return Math.max(1, Math.ceil(total / pageSize.value))
+})
+
+const pageList = computed<(number | '…')[]>(() => {
+  const total = totalPages.value
+  const current = tablePage.value
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i)
+  const pages: (number | '…')[] = [0]
+  if (current > 2) pages.push('…')
+  for (let i = Math.max(1, current - 1); i <= Math.min(total - 2, current + 1); i++) pages.push(i)
+  if (current < total - 3) pages.push('…')
+  pages.push(total - 1)
+  return pages
 })
 
 const previewRows = computed(() => {
   const pattern = project.derived
   if (!pattern) return []
-  const start = tablePage.value * PAGE_SIZE
-  return Array.from(pattern.x.slice(start, start + PAGE_SIZE)).map((x, i) => ({
-    index: start + i + 1,
-    x,
-    y: pattern.y[start + i] ?? 0,
-  }))
+  const start = tablePage.value * pageSize.value
+  const sameLength = project.raw?.y.length === pattern.y.length
+  return Array.from(pattern.x.slice(start, start + pageSize.value)).map((x, i) => {
+    const index = start + i
+    return {
+      index: index + 1,
+      x,
+      y: pattern.y[index] ?? 0,
+      raw: sameLength ? (project.raw?.y[index] ?? null) : null,
+    }
+  })
 })
 
 /** Cheap local-maximum peak search used for the summary card. */
@@ -300,12 +331,45 @@ const jadeStatusText = computed(() => {
   return project.jadeStep ? '已映射' : '未映射'
 })
 
-const peakText = computed(() => {
-  if (!peaks.value.length) return '—'
-  const head = `${'2θ / X'.padStart(12)}${'强度'.padStart(14)}`
-  const rows = peaks.value.map((peak) => `${peak.x.toFixed(4).padStart(12)}${peak.y.toPrecision(6).padStart(14)}`)
-  return [head, ...rows].join('\n')
+function peakRel(index: number): string {
+  const top = peaks.value[0]?.y ?? 1
+  return `${((peaks.value[index]!.y / top) * 100).toFixed(1)}`
+}
+
+const stepSizeText = computed(() => {
+  const range = project.derivedRange
+  return range ? range.stepMedian.toPrecision(3) : '—'
 })
+
+function exportXyFile() {
+  const pattern = project.derived
+  if (!pattern) return
+  const name = `${project.source?.name ?? 'data'}.xy`
+  const lines = Array.from(pattern.x).map((x, i) => `${x.toFixed(5)} ${(pattern.y[i] ?? 0).toFixed(5)}`)
+  downloadText(lines.join('\n'), name, 'text/plain;charset=us-ascii')
+  ElMessage.success(`已导出 ${name}`)
+}
+
+function exportCsvFile() {
+  const pattern = project.derived
+  if (!pattern) return
+  const name = `${project.source?.name ?? 'data'}.csv`
+  const lines = ['x,y', ...Array.from(pattern.x).map((x, i) => `${x},${pattern.y[i] ?? 0}`)]
+  downloadText(lines.join('\n'), name, 'text/csv')
+  ElMessage.success(`已导出 ${name}`)
+}
+
+function stepIcon(type: StepType) {
+  const icons: Record<string, unknown> = {
+    crop: Scissors,
+    smooth: Waves,
+    background: Minus,
+    normalize: Scaling,
+    kalpha2: GitBranch,
+    'jade-map': Map,
+  }
+  return (icons[type] as typeof Upload) ?? Activity
+}
 
 function defaultParams(type: StepType): StepParams {
   const range = project.range
@@ -505,26 +569,36 @@ async function openProject(files: File[]) {
     <template #steps>
       <div class="panel">
         <div class="panel__head">
-          <h2 class="panel__title"><Sparkles /> 处理流程</h2>
-          <span class="panel__hint">{{ steps.length }} 步</span>
+          <h2 class="panel__title"><Sparkles /> 数据与操作</h2>
+          <span class="panel__hint">{{ steps.length }} 个步骤</span>
         </div>
         <div class="panel__body">
           <ol class="flow">
-            <li class="flow__item" :class="{ 'is-done': hasData }">
-              <span class="flow__dot mono">01</span>
-              <span class="flow__label">数据导入</span>
-              <Check v-if="hasData" class="flow__check" />
+            <li class="flow__item" :class="{ 'is-active': activeStepId === null }">
+              <button type="button" class="flow__btn" @click="activeStepId = null">
+                <span class="flow__icon is-ok"><Upload /></span>
+                <span class="flow__main">
+                  <span class="flow__label">数据导入</span>
+                  <span class="flow__sub">{{ project.source?.fileName ?? '拖入文件或选择示例' }}</span>
+                </span>
+                <ChevronRight class="flow__arrow" />
+              </button>
             </li>
             <li
               v-for="(step, index) in steps"
               :key="step.id"
               class="flow__item"
-              :class="{ 'is-active': activeStepId === step.id, 'is-done': step.enabled }"
+              :class="{ 'is-active': activeStepId === step.id }"
             >
               <button type="button" class="flow__btn" @click="activeStepId = step.id">
-                <span class="flow__dot mono">{{ String(index + 2).padStart(2, '0') }}</span>
-                <span class="flow__label">{{ stepLabel(step) }}</span>
-                <Check v-if="step.enabled" class="flow__check" />
+                <span class="flow__icon" :class="{ 'is-on': step.enabled }">
+                  <component :is="stepIcon(step.type)" />
+                </span>
+                <span class="flow__main">
+                  <span class="flow__label">{{ stepLabel(step) }}</span>
+                  <span class="flow__sub">{{ step.enabled ? '已应用' : '未开启' }}</span>
+                </span>
+                <ChevronRight class="flow__arrow" />
               </button>
             </li>
             <li class="flow__item">
@@ -546,23 +620,37 @@ async function openProject(files: File[]) {
             </li>
           </ol>
 
-          <StepCard
-            v-if="activeStep"
-            class="active-step"
-            :step="activeStep"
-            :index="steps.findIndex((item) => item.id === (activeStep?.id ?? ''))"
-            :total="steps.length"
-            @update:params="setStepParams(activeStep.id, $event)"
-            @toggle="project.toggleStep(activeStep.id)"
-            @remove="removeActiveStep"
-            @move="project.moveStep(activeStep.id, $event)"
-            @duplicate="project.duplicateStep(activeStep.id)"
-          />
-          <p v-else class="section-note">点击流程中的任意步骤，可就地编辑它的参数。</p>
+          <div class="flow-params">
+            <h3 class="flow-params__title">
+              {{ activeStep ? `${stepLabel(activeStep)}参数` : '导入参数' }}
+            </h3>
+            <StepCard
+              v-if="activeStep"
+              :step="activeStep"
+              :index="steps.findIndex((item) => item.id === (activeStep?.id ?? ''))"
+              :total="steps.length"
+              @update:params="setStepParams(activeStep?.id ?? '', $event)"
+              @toggle="project.toggleStep(activeStep?.id ?? '')"
+              @remove="removeActiveStep"
+              @move="project.moveStep(activeStep?.id ?? '', $event)"
+              @duplicate="project.duplicateStep(activeStep?.id ?? '')"
+            />
+            <p v-else class="section-note">在上方拖入文件、粘贴文本或载入示例数据；选择某个步骤可就地调整参数。</p>
+            <details class="sub-more">
+              <summary>高级选项</summary>
+              <div class="row">
+                <button type="button" class="btn btn--quiet" :disabled="!steps.length" @click="resetSteps">
+                  <RotateCcw /> 重置步骤
+                </button>
+                <button type="button" class="btn btn--quiet" :disabled="!project.hasData" @click="clearData">
+                  清空数据
+                </button>
+              </div>
+            </details>
+          </div>
         </div>
       </div>
     </template>
-
     <!-- 1 · 数据输入 -->
     <template #source>
       <div class="panel">
@@ -791,49 +879,74 @@ async function openProject(files: File[]) {
       <div class="panel">
         <div class="panel__head">
           <h2 class="panel__title"><Table2 /> 数据预览</h2>
-          <span class="panel__hint">{{ (project.derived?.x.length ?? 0).toLocaleString() }} 行</span>
+          <span class="panel__hint">共 {{ (project.derived?.x.length ?? 0).toLocaleString() }} 条数据</span>
         </div>
         <div class="panel__body">
           <div class="table-wrap">
             <table class="data">
               <thead>
                 <tr>
-                  <th class="num">#</th>
-                  <th class="num">X</th>
-                  <th class="num">Y</th>
+                  <th class="num">序号</th>
+                  <th class="num">2θ (°)</th>
+                  <th class="num">原始强度</th>
+                  <th class="num">处理后强度</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="row in previewRows" :key="row.index">
                   <td class="num">{{ row.index }}</td>
-                  <td class="num">{{ row.x.toFixed(4) }}</td>
+                  <td class="num">{{ row.x.toFixed(3) }}</td>
+                  <td class="num">{{ typeof row.raw === 'number' ? row.raw.toFixed(1) : '—' }}</td>
                   <td class="num">{{ row.y.toPrecision(6) }}</td>
                 </tr>
                 <tr v-if="!previewRows.length">
-                  <td class="text" colspan="3">暂无数据</td>
+                  <td class="text" colspan="4">暂无数据</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div class="pager">
-            <button type="button" class="btn btn--quiet" :disabled="tablePage <= 0" @click="tablePage--">
-              上一页
+            <button type="button" class="pager__nav" :disabled="tablePage <= 0" aria-label="上一页" @click="tablePage--">
+              ‹
             </button>
-            <span class="section-note">{{ tablePage + 1 }} / {{ totalPages }}</span>
+            <template v-for="(page, i) in pageList" :key="i">
+              <span v-if="page === '…'" class="pager__gap">…</span>
+              <button
+                v-else
+                type="button"
+                class="pager__page"
+                :class="{ 'is-current': page === tablePage }"
+                :aria-current="page === tablePage ? 'page' : undefined"
+                @click="tablePage = page"
+              >
+                {{ page + 1 }}
+              </button>
+            </template>
             <button
               type="button"
-              class="btn btn--quiet"
+              class="pager__nav"
               :disabled="tablePage >= totalPages - 1"
+              aria-label="下一页"
               @click="tablePage++"
             >
-              下一页
+              ›
             </button>
+            <span class="spacer" />
+            <el-select
+              :model-value="pageSize"
+              size="small"
+              style="width: 96px"
+              @update:model-value="(value: number) => (pageSize = Number(value))"
+            >
+              <el-option :value="10" label="10 条 / 页" />
+              <el-option :value="20" label="20 条 / 页" />
+              <el-option :value="50" label="50 条 / 页" />
+            </el-select>
           </div>
         </div>
       </div>
     </template>
-
     <!-- 右侧仪表盘 -->
     <template #dashboard>
       <div class="panel">
@@ -852,10 +965,14 @@ async function openProject(files: File[]) {
             </div>
           </div>
           <div class="metric-list">
-            <div><span>X 范围</span><b class="mono">{{ rangeText }}</b></div>
-            <div><span>最大强度</span><b class="mono">{{ maxText }}</b></div>
-            <div><span>处理步骤</span><b class="mono">{{ steps.length }}</b></div>
-            <div><span>Jade 状态</span><b>{{ jadeStatusText }}</b></div>
+            <div><span>2θ 范围 (°)</span><b class="mono">{{ rangeText }}</b></div>
+            <div><span>步长 (°)</span><b class="mono">{{ stepSizeText }}</b></div>
+          </div>
+          <div v-if="hasData" class="status-note">
+            <Check />
+            <span>
+              {{ project.jadeStep ? '数据处理完成，已满足 Jade 导入要求。' : '数据处理完成，可在「导出到 Jade」生成可读文件。' }}
+            </span>
           </div>
         </div>
       </div>
@@ -863,47 +980,98 @@ async function openProject(files: File[]) {
       <div class="panel">
         <div class="panel__head">
           <h2 class="panel__title">峰位信息</h2>
-          <span class="panel__hint">Top {{ peaks.length }}</span>
+          <span class="panel__hint">前 {{ peaks.length }} 个</span>
         </div>
         <div class="panel__body">
-          <pre v-if="peaks.length" class="code-surface"><code>{{ peakText }}</code></pre>
+          <table v-if="peaks.length" class="data">
+            <thead>
+              <tr>
+                <th class="num">#</th>
+                <th class="num">2θ (°)</th>
+                <th class="num">相对强度 (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(peak, index) in peaks" :key="index">
+                <td class="num">{{ index + 1 }}</td>
+                <td class="num">{{ peak.x.toFixed(2) }}</td>
+                <td class="num">{{ peakRel(index) }}</td>
+              </tr>
+            </tbody>
+          </table>
           <p v-else class="section-note">暂无数据，或未检测到明显衍射峰。</p>
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel export-panel">
         <div class="panel__head">
-          <h2 class="panel__title">导出数据</h2>
+          <h2 class="panel__title"><Download /> 导出数据</h2>
         </div>
         <div class="panel__body export-grid">
-          <button type="button" class="btn" :disabled="!hasData" @click="goJade">Jade .xy</button>
-          <button type="button" class="btn" :disabled="!hasData" @click="saveProject">工程 .json</button>
-          <button type="button" class="btn" :disabled="!hasData" @click="router.push('/data/dif')">
-            DIF → XY
-          </button>
-          <button type="button" class="btn" :disabled="!hasData" @click="copySummary">复制摘要</button>
+          <button type="button" class="btn" :disabled="!hasData" @click="exportXyFile">XY</button>
+          <button type="button" class="btn" :disabled="!hasData" @click="exportCsvFile">CSV</button>
+          <button type="button" class="btn" :disabled="!hasData" @click="goJade">Jade</button>
+          <button type="button" class="btn" :disabled="!hasData" @click="router.push('/data/dif')">DIF</button>
         </div>
       </div>
     </template>
-
     <!-- 上下文提示 -->
     <template #tips>
-      小提示：在左侧流程中选择步骤即可就地调参，右侧图表与下方数据预览会同步更新；顶部「撤销 / 重做」可逐步回退。
+      小提示：您可以在图谱上框选区域进行局部放大，双击图谱重置视图；用右上角的「原始数据 / 处理后数据」切换显示的曲线。
     </template>
 
-    <!-- 结果 · 图表 -->
+    <!-- 图谱 -->
     <template #chart>
-      <SciChart
-        v-if="hasData"
-        :series="chartSeries"
-        :x-label="project.derived?.meta.xLabel"
-        :x-unit="project.derived?.meta.xUnit"
-        :y-label="project.derived?.meta.yLabel"
-        :y-unit="project.derived?.meta.yUnit"
-        :height="320"
-      />
+      <div class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title"><LineChart /> 衍射图谱</h2>
+          <div class="chart-legend">
+            <button
+              type="button"
+              class="chart-legend__chip"
+              :class="{ 'is-on': chartMode === 'both' }"
+              @click="chartMode = 'both'"
+            >
+              原始数据
+            </button>
+            <button
+              type="button"
+              class="chart-legend__chip"
+              :class="{ 'is-on': chartMode === 'processed' }"
+              @click="chartMode = 'processed'"
+            >
+              处理后数据
+            </button>
+          </div>
+        </div>
+        <div class="panel__body">
+          <div class="chart-toolbar">
+            <button type="button" class="tool-btn" title="重置视图" aria-label="重置视图" @click="chartRef?.reset()">
+              <RotateCcw />
+            </button>
+            <button
+              type="button"
+              class="tool-btn"
+              title="导出 PNG"
+              aria-label="导出 PNG"
+              @click="chartRef?.exportPNG()"
+            >
+              <Download />
+            </button>
+          </div>
+          <SciChart
+            v-if="hasData"
+            ref="chartRef"
+            :series="chartSeries"
+            :x-label="project.derived?.meta.xLabel"
+            :x-unit="project.derived?.meta.xUnit"
+            :y-label="project.derived?.meta.yLabel"
+            :y-unit="project.derived?.meta.yUnit"
+            :height="380"
+          />
+        </div>
+      </div>
     </template>
-
     <!-- 结果 · 文本 -->
     <template #text>
       <pre class="code-surface"><code>{{ summaryText }}</code></pre>
@@ -1321,5 +1489,229 @@ async function openProject(files: File[]) {
 
 .export-grid :deep(.btn) {
   justify-content: center;
+}
+
+/* ---------------------------------------------------------------- flow v2 */
+
+.flow__icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--text-3);
+}
+
+.flow__icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.flow__icon.is-ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.flow__icon.is-on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.flow__main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.flow__sub {
+  font-size: 10.5px;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flow__arrow {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  color: var(--text-3);
+  opacity: 0;
+  transition:
+    opacity var(--duration) var(--ease),
+    transform var(--duration) var(--ease);
+}
+
+.flow__btn:hover .flow__arrow {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+.flow-params {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.flow-params__title {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+/* ---------------------------------------------------------------- chart */
+
+.chart-legend {
+  display: flex;
+  gap: 6px;
+}
+
+.chart-legend__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-3);
+  font-size: 11px;
+  cursor: pointer;
+  transition:
+    border-color var(--duration) var(--ease),
+    color var(--duration) var(--ease),
+    background var(--duration) var(--ease);
+}
+
+.chart-legend__chip::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.chart-legend__chip.is-on {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.chart-legend__chip.is-on::before {
+  background: var(--accent);
+}
+
+.chart-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.tool-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-3);
+  cursor: pointer;
+}
+
+.tool-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.tool-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* ---------------------------------------------------------------- pager */
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.pager__page,
+.pager__nav {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.pager__page:hover:not(:disabled),
+.pager__nav:hover:not(:disabled) {
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.pager__page.is-current {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.pager__gap {
+  min-width: 20px;
+  text-align: center;
+  color: var(--text-3);
+}
+
+.pager__nav:disabled,
+.pager__page:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------- misc */
+
+.status-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  color: var(--accent);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.status-note svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.export-panel {
+  border-color: var(--accent-line);
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
 }
 </style>

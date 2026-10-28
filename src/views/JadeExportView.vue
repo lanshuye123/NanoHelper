@@ -419,7 +419,7 @@ async function copyPreview() {
         :x-unit="project.derived?.meta.xUnit"
         :y-label="project.derived?.meta.yLabel"
         :y-unit="project.derived?.meta.yUnit"
-        :height="320"
+        :height="380"
       />
     </template>
 
